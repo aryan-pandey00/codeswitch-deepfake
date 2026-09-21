@@ -1,0 +1,62 @@
+# Audio. None of it belongs in the repository.
+# The acceptance-test clips are other people's voices, recorded on their own
+# phones, and the corpora themselves are published separately.
+data/
+*.wav
+*.flac
+*.m4a
+*.mp3
+*.opus
+*.aac
+
+# Model weights too large for GitHub, which caps a single file at 100 MB.
+# frontend_int8.onnx is 291 MB and is rebuilt by the export notebook.
+# heads.json is 249 KB and IS committed, since it is the trained classifier.
+models/*.onnx
+models/lora_adapter/
+*.keras
+*.h5
+*.pt
+*.pth
+*.ckpt
+
+# Build output and dependencies
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+*.egg-info/
+
+# Local environment and secrets.
+# app/web/.env.production is committed on purpose: it holds only the public API
+# URL, which the browser calls directly, and Vite inlines it at build time.
+# Without it a Vercel build silently serves the offline example instead.
+.env
+.env.local
+.env.*.local
+.modal.toml
+
+# OS and editor
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Scratch
+tmp/
+temp/
+scratch/
+*.log

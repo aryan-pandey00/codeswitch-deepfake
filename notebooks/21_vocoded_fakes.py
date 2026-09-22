@@ -1,38 +1,27 @@
 """Resynthesise real speech through several vocoders, to teach synthesis rather than a generator.
 
-The detectors in this project were trained against XTTS-v2 and FreeVC. Both decode through
-HiFi-GAN, so between them they show the model close to one vocoder family, and a clip from any
-other system is unfamiliar in a way no amount of held-out speakers fixes. Tested informally on
-21 Sep with a downloaded English clip from an unknown generator, both heads returned genuine at
-full margin.
+The detectors here trained against XTTS-v2 and FreeVC, which both decode through HiFi-GAN, so
+between them they show the model one vocoder family. A downloaded clip from an unknown generator
+came back genuine at full margin from both heads.
 
-The fix is to stop supplying fakes as "audio some TTS produced" and start supplying them as
-"audio that has been through a resynthesis bottleneck". Every generator has one. Taking a real
-recording and passing it through a vocoder isolates exactly that, because the utterance, the
-speaker, the words and the channel are all held fixed and the resynthesis is the only thing
-that changed. A model trained on this cannot learn a speaker, a transcript or a corpus as a
-proxy for fakeness, since the genuine twin of every fake is sitting in the same training set.
+Passing a real recording through a vocoder isolates the resynthesis: utterance, speaker, words
+and channel are all held fixed. A model cannot then learn a speaker or a corpus as a proxy for
+fakeness, because the genuine twin of every fake is in the same training set. Published
+approach, Wang and Yamagishi, arXiv 2309.06014, on a frozen SSL frontend.
 
-The approach is published: Wang and Yamagishi, "Can large-scale vocoded spoofed data improve
-speech spoofing countermeasure with a self-supervised front end?", arXiv 2309.06014. Their
-setup uses a frozen SSL frontend, which is also what this project's own results argue for.
+Four paths, deliberately unalike, since three variations of one idea teach one artifact three
+times:
 
-Four paths are generated and they are deliberately unalike, because three variations of one
-idea would teach one artifact three times:
-
-    encodec      a neural audio codec, quantised latent, adversarially trained decoder
+    encodec      neural audio codec, quantised latent, adversarially trained decoder
     griffinlim   classical phase reconstruction from a magnitude mel, no learned decoder
-    mel_hifigan  a learned mel vocoder, the family XTTS and FreeVC already decode through
-    lowrank      a spectral rank truncation, cheap, and the least like the other three
+    mel_hifigan  learned mel vocoder, the family XTTS and FreeVC already decode through
+    lowrank      spectral rank truncation, and the least like the other three
 
-The fourth is held out of training and used only as an unseen attack at evaluation. Which one
-is held out is a parameter rather than a constant, so the claim does not rest on one lucky
-choice.
+One is held out as an unseen attack, and which one is a parameter rather than a constant so the
+claim does not rest on a lucky choice.
 
-Two properties are preserved on purpose. Output goes through the same native -> 8 kHz -> 16 kHz
-bottleneck as every other file in this project, so bandwidth cannot separate the classes. And
-the source clip keeps its role, split and speaker, so a vocoded fake never crosses from the
-training side to the evaluation side.
+Output keeps the same native -> 8 kHz -> 16 kHz bottleneck as every other file here, and each
+source keeps its role and split, so a fake never crosses to the evaluation side.
 
 Requirements
     Kaggle notebook, GPU T4 for encodec and the mel vocoder, CPU is enough for the rest.
@@ -63,8 +52,7 @@ SEED = 1337
 BOTTLENECK_HZ = 8000
 TARGET_SR = 16000
 
-# How many source clips to draw from each side. The training side needs enough to matter
-# against 11,410 existing rows; the evaluation side only needs enough for a stable rate.
+# Training side needs enough to matter against 11,410 existing rows; evaluation only a stable rate.
 N_TRAIN_SOURCE = 6000
 N_PER_TEST_CORPUS = 1500
 
@@ -94,9 +82,7 @@ if RESUME:
 
 
 # CELL 2: choose the source clips
-# Drawn per role rather than at random over everything, because a vocoded fake inherits its
-# source's role. Sampling without that split would put resynthesised copies of training audio
-# into the evaluation set.
+# Per role, since a fake inherits its source's role and would otherwise leak training audio.
 train_pool = MAN[(MAN.role == "train_source") & (MAN.split == "train")]
 picked = [train_pool.sample(min(N_TRAIN_SOURCE, len(train_pool)), random_state=SEED)]
 
@@ -241,8 +227,7 @@ def path_lowrank(x, sr, keep=48):
     return librosa.istft(mag_hat * phase, hop_length=256, length=len(x)), sr
 
 
-# Five defined, and the smoke test below keeps whichever survive. mel_hifigan is the one
-# with a heavy dependency, so lpc exists to guarantee three trainable paths without it.
+# Five defined, the smoke test keeps whichever survive. lpc is insurance against mel_hifigan.
 PATHS = {
     "encodec": path_encodec,
     "griffinlim": path_griffinlim,
@@ -251,15 +236,13 @@ PATHS = {
     "lowrank": path_lowrank,
 }
 
-# Held out of training and scored only as an unseen attack. Named here so the training
-# notebook reads it from the manifest rather than being told separately.
+# Held out and scored only as an unseen attack, named here so it travels in the manifest.
 HELD_OUT = "lowrank"
 print(f"paths: {list(PATHS)}   held out for evaluation: {HELD_OUT}")
 
 
 # CELL 4: a smoke test before committing to the full pass
-# Every path runs on one clip first. A missing dependency or a shape error surfaces in seconds
-# here rather than forty minutes into a committed run.
+# One clip per path, so a missing dependency surfaces in seconds rather than forty minutes in.
 probe, probe_sr = sf.read(f"{REAL_ROOT}/{SRC.iloc[0].path}", dtype="float32")
 print(f"probe: {len(probe)/probe_sr:.1f}s at {probe_sr} Hz\n")
 
@@ -296,8 +279,7 @@ if per_clip * len(SRC) / 3600 > 6:
 
 
 # CELL 5: generate
-# Written atomically and skipped if present, so a session killed at the nine hour cap resumes
-# rather than restarting.
+# Atomic writes, skipped if present, so a session killed at the nine hour cap resumes.
 rows, failed = [], []
 t_start = time.time()
 total = len(SRC) * len(PATHS)
@@ -366,7 +348,6 @@ if failed:
 
 
 # CELL 6: the confound checks, before any of this reaches a model
-# Three ways this could produce a result that has nothing to do with synthesis.
 print(VOC.groupby(["vocoder", "role"]).size().to_string())
 
 import librosa
@@ -399,8 +380,7 @@ print("\nA mean far from 1.00 means a path is truncating or padding, and length 
 
 
 # CELL 7: listen
-# A pipeline nobody has listened to is not verified. These have to still sound like speech,
-# and they have to sound like the same person saying the same words.
+# A pipeline nobody has listened to is not verified.
 import IPython.display as ipd
 
 demo = VOC.groupby("vocoder", group_keys=False).apply(

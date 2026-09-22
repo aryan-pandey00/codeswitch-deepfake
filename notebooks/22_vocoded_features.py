@@ -1,26 +1,28 @@
-"""Cache frozen XLS-R features for the vocoded fakes, in the same space as the existing cache.
+"""Cache frozen XLS-R features for the vocoded set, both classes, in the same space as the existing cache.
 
-Notebook 21 wrote the resynthesised audio. Nothing can be trained on it until it has been
-through the same frontend, with the same pooling, as the 31,922 clips already cached by
-notebook 09. Any difference in checkpoint, sample rate, normalisation or masking would put
-these rows in a different space, and a head trained across both would be fitting the
-difference between two extractors rather than the difference between real and fake.
+Both classes are extracted, and the genuine one is the passthrough twins from 21b rather than the
+frozen real corpus: 21b measured a single scalar separating corpus from vocoded at AUC 0.61,
+because a vocoded file passes the 8 kHz bottleneck twice and the corpus once. Against the twins
+that falls to 0.54. Pairing on source_path therefore gives a fake and a genuine clip sharing
+utterance, speaker, session and processing history, differing only by the vocoder.
 
-The recipe is therefore copied rather than rewritten: facebook/wav2vec2-xls-r-300m, per
-utterance normalisation with an attention mask, mean and standard deviation over the valid
-frames only, accumulated in fp32 and stored as fp16.
+Nothing can be trained on 21's audio until it has been through the same frontend and pooling as
+the 31,922 clips notebook 09 cached: any difference in checkpoint, sample rate, normalisation or
+masking would put these rows in a different space, and a head trained across both would fit the
+difference between two extractors rather than between real and fake. So the recipe is copied, not
+rewritten — facebook/wav2vec2-xls-r-300m, per utterance normalisation with an attention mask,
+mean and standard deviation over valid frames, accumulated in fp32 and stored as fp16.
 
-One thing does differ, deliberately. Notebook 09 stored all 25 hidden states because the layer
-had not been chosen yet. Layer 20 has been settled since, and is locked, so only that layer is
-stored here. The cache is 143 MB instead of 3.5 GB, which matters because this output has to
-be attached alongside the existing one.
+One thing differs deliberately: 09 stored all 25 hidden states because the layer was not chosen
+yet. Layer 20 is locked now, so only that is stored, and the cache is 143 MB instead of 3.5 GB.
 
 Requirements
     Kaggle notebook, GPU T4. Internet: On for the checkpoint (~1.2 GB).
-    Attached inputs: the output of notebook 21, and codeswitch-deepfake-feats for the
-    fingerprint check.
+    Attached inputs: the output of notebook 21 (vocoded), the output of 21b (passthrough),
+    and codeswitch-deepfake-feats for the fingerprint check.
     Resumable. Re-attach the previous commit's output to continue a killed run.
     Writes voc_layer20_fp16.npy and voc_index.csv.
+    Roughly 1.25x the clips of a fakes-only run, since each fake now carries its twin.
 """
 
 # CELL 1: configuration and mounts
@@ -57,11 +59,14 @@ print(f"device {DEVICE}")
 
 
 def find(name):
-    """Kaggle mounts inputs under the notebook slug, not the dataset name."""
-    return next(
-        (p for depth in ("*", "*/*", "*/*/*")
-         for p in sorted(glob.glob(f"/kaggle/input/{depth}/{name}")) if os.path.isdir(p)),
-        None)
+    """Locate a mounted folder. Mounts are namespaced (input/datasets/<user>/<slug>/,
+    input/notebooks/<user>/<slug>/), sometimes deeper, so depth is searched not hardcoded."""
+    for depth in range(1, 7):
+        hits = [p for p in sorted(glob.glob("/kaggle/input/" + "*/" * depth + name))
+                if os.path.isdir(p)]
+        if hits:
+            return hits[0]
+    return None
 
 
 VOC_DIR = find("vocoded")
@@ -69,16 +74,35 @@ if VOC_DIR is None:
     sys.exit("attach the output of notebook 21")
 
 VOC_ROOT = os.path.dirname(VOC_DIR)
-VOC = pd.read_csv(f"{VOC_ROOT}/manifest_vocoded.csv")
-VOC["file"] = [f"{VOC_DIR}/{f}" for f in VOC.fname]
+FAKE = pd.read_csv(f"{VOC_ROOT}/manifest_vocoded.csv")
+FAKE["file"] = [f"{VOC_DIR}/{f}" for f in FAKE.fname]
+FAKE["label"] = 1
+
+# The genuine class is the passthrough twins from 21b, not the frozen real corpus: against the
+# corpus one scalar separated the classes at AUC 0.61, against the twins 0.54.
+PASS_DIR = find("passthrough")
+if PASS_DIR is None:
+    sys.exit("attach the output of notebook 21b, which holds the genuine class")
+
+REAL = pd.read_csv(f"{os.path.dirname(PASS_DIR)}/manifest_passthrough.csv")
+REAL["file"] = [f"{PASS_DIR}/{f}" for f in REAL.fname]
+REAL["label"] = 0
+
+VOC = pd.concat([FAKE, REAL], ignore_index=True, sort=False)
 
 missing = [p for p in VOC.file if not os.path.exists(p)]
 if missing:
     print(f"{len(missing)} manifest rows have no audio, dropping them")
     VOC = VOC[VOC.file.apply(os.path.exists)].reset_index(drop=True)
 
+# Every fake needs its twin here, since the pairing is what the set rests on.
+orphans = set(VOC[VOC.label == 1].source_path) - set(VOC[VOC.label == 0].source_path)
+if orphans:
+    print(f"{len(orphans)} sources have fakes but no twin, dropping those fakes")
+    VOC = VOC[(VOC.label == 0) | ~VOC.source_path.isin(orphans)].reset_index(drop=True)
+
 N = len(VOC)
-print(f"{N:,} vocoded clips")
+print(f"{N:,} clips: {(VOC.label == 1).sum():,} vocoded, {(VOC.label == 0).sum():,} twins")
 print(VOC.groupby(["vocoder", "role"]).size().to_string())
 
 
@@ -241,19 +265,49 @@ else:
 # close but not identical. Identical would mean a path is a no-op and is teaching nothing.
 if OLD is not None:
     src_names = {os.path.basename(f): i for i, f in enumerate(old_idx.file)}
-    pairs = []
-    for i in np.where(done)[0][:2000]:
-        j = src_names.get(os.path.basename(str(VOC.source_path.values[i])))
-        if j is not None:
-            pairs.append((i, j))
-    if pairs:
+    labels = VOC.label.values
+
+    # Split by class, because the two say opposite things: a fake should sit close to its source
+    # but not on top of it, a twin almost exactly on top of it.
+    for want, name, reading in (
+        (1, "fake", "Near 1.000 across the board would mean the resynthesis left no trace in "
+                    "the representation, and no head could separate them."),
+        (0, "twin", "Well below 1.000 would mean the passthrough is not the near no-op it is "
+                    "meant to be, and the genuine class carries its own artifact."),
+    ):
+        pairs = []
+        for i in np.where(done)[0]:
+            if labels[i] != want:
+                continue
+            j = src_names.get(os.path.basename(str(VOC.source_path.values[i])))
+            if j is not None:
+                pairs.append((i, j))
+            if len(pairs) >= 2000:
+                break
+        if not pairs:
+            continue
         a = np.asarray(feats[[p[0] for p in pairs]], dtype=np.float32)
         b = np.asarray(old_feats[[p[1] for p in pairs], LAYER], dtype=np.float32)
         cos = (a * b).sum(1) / (np.linalg.norm(a, axis=1) * np.linalg.norm(b, axis=1) + 1e-9)
-        print(f"\n{len(pairs)} fake/source pairs, cosine similarity "
+        print(f"\n{len(pairs)} {name}/source pairs, cosine similarity "
               f"median {np.median(cos):.4f}, min {cos.min():.4f}, max {cos.max():.4f}")
-        print("Near 1.000 across the board would mean the resynthesis left no trace in the "
-              "representation, and no head could separate them.")
+        print(reading)
+
+        # Pooled over four paths, one no-op hides behind three that work. A path sitting on top of
+        # its source teaches nothing, and if it is the held-out one the unseen-attack rate is
+        # measuring an empty attack.
+        if want == 1:
+            per = pd.DataFrame({
+                "vocoder": VOC.vocoder.values[[p[0] for p in pairs]],
+                "held_out": VOC.held_out.values[[p[0] for p in pairs]],
+                "cos": cos,
+            })
+            print(per.groupby(["vocoder", "held_out"]).cos
+                  .agg(["size", "median", "max"]).round(4).to_string())
+            flat = per.groupby("vocoder").cos.median()
+            dead = flat[flat > 0.999]
+            print(f"paths indistinguishable from their source: "
+                  f"{list(dead.index) if len(dead) else 'none'}")
 
 
 # CELL 5: the README for the output dataset
@@ -267,13 +321,19 @@ standard deviation pooled over valid frames only, accumulated in fp32 and stored
 Identical to the recipe in `codeswitch-deepfake-feats`, so rows from the two can be stacked.
 
 * `voc_layer20_fp16.npy`, ({N}, {DIM}) fp16, row order matches `voc_index.csv`
-* `voc_index.csv`, one row per clip, carrying `vocoder`, `held_out`, `set`, `role`, `split`,
-  `speaker` and `source_path`
+* `voc_index.csv`, one row per clip, carrying `label`, `vocoder`, `held_out`, `set`, `role`,
+  `split`, `speaker` and `source_path`
 
 Only layer {LAYER} is stored. The layer sweep is settled, and keeping all 25 would be 3.5 GB
 rather than {N * DIM * 2 / 2**20:.0f} MB.
 
-All rows are label=fake. The genuine counterpart of each one is the file named in
-`source_path`, which lives in `codeswitch-deepfake-real`.
+Both classes are here: `label=1` is a vocoded fake, `label=0` is that clip's genuine twin,
+written by 21b. The twin is the same utterance, speaker and channel, put through the same
+8 kHz bottleneck and peak limiter and nothing else, so the vocoder is the only difference
+between a pair. Do not substitute rows from `codeswitch-deepfake-real` for the genuine class:
+those went through the bottleneck once rather than twice, and 21b measured that gap at AUC
+0.61 on a single scalar, which is separable without modelling synthesis at all.
+
+Pair on `source_path`. Split on `speaker`, never on row order, since a pair shares both.
 """)
 print("README written")

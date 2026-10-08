@@ -1,20 +1,17 @@
 """Check whether the channel grid's band-ratio gap tracks the label or only the corpus.
 
 Notebook 23 found fakes sitting below reals on energy above 4 kHz in the clean condition, at a
-single-scalar AUC of 0.86. That is a property of the frozen dataset rather than of the grid,
-since every codec moves it back towards chance.
+single-scalar AUC of 0.86. That is a property of the frozen dataset rather than of the grid.
 
-It matters for one reason only. If genuine speech recorded outside the training corpus also
-sits low on that scalar, then "low band ratio looks fake" predicts rejection of genuine
-out-of-corpus speech, which is an alternative explanation for the main result. If it does not,
-the gap is a discrimination shortcut that cannot touch false rejection.
+It matters for one reason. If genuine speech recorded outside the training corpus also sits low
+on that scalar, then "low band ratio looks fake" predicts rejection of genuine out-of-corpus
+speech, which is an alternative explanation for the main result. If it does not, the gap is a
+discrimination shortcut that cannot touch false rejection.
 
-Reads notebook 23's manifest. No audio, no GPU, seconds. Its own output is one small CSV,
-which is also the point: the grid output is several GB and cannot be downloaded selectively.
+Reads notebook 23's manifest. No audio, no GPU, seconds.
 
 Requirements
-    Kaggle notebook, CPU. Attached input: the output of notebook 23.
-"""
+    Kaggle notebook, CPU. Attached input: the output of notebook 23."""
 
 # CELL 1: find the manifest
 

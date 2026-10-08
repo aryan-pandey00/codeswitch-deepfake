@@ -1,25 +1,15 @@
 """Detection API for the code-switched deepfake demo.
 
-Scores one upload with two detectors and returns both. The baseline is trained on a single
-corpus and the fixed model adds a handful of speakers from other recording conditions. Showing
-them side by side is the point of the demo: on genuine speech recorded outside the training
-corpus the baseline says fake and the fixed model says real, which is the paper's finding made
-visible without a slide.
+Scores one upload with two detectors and returns both: a baseline trained on a single corpus,
+and a fixed model adding speakers from other recording conditions. They share one frozen
+frontend, so a request costs one forward pass and two dot products.
 
-Both detectors share one frozen frontend, so a request costs one forward pass and two dot
-products. The heads are logistic regressions over pooled features, stored as plain arrays.
-
-Preprocessing is not negotiable. Every training file passed through native to 8 kHz to 16 kHz,
-so the models have never seen energy above 4 kHz. An upload from a phone arrives at 44.1 kHz
-full band, and feeding that in unchanged puts the input out of distribution in exactly the way
-this project measured. The same bottleneck is applied here.
+Preprocessing is not negotiable. Training audio passed through native -> 8 kHz -> 16 kHz, so
+the models have never seen energy above 4 kHz. The same bottleneck is applied to every upload.
 
 Requirements
-    pip install modal, then `modal setup` once.
-    Deploy with: modal deploy service.py
-    Model artifacts in MODEL_DIR. Absent, the service answers with a stub and says so, which
-    keeps the frontend demonstrable while the export is still being produced.
-"""
+    pip install modal, then `modal setup` once. Deploy with: modal deploy service.py
+    Model artifacts in MODEL_DIR. Absent, the service answers with a stub and says so."""
 
 import modal
 
@@ -181,11 +171,9 @@ class Detector:
         for name, head in self.heads.items():
             z = np.array([float(((f - head["mu"]) / head["sd"] * head["w"]).sum() + head["b"])
                           for f in feats])
-            # Averaged before the sigmoid, not after: one saturated window would otherwise
-            # pull a mean of already-squashed numbers further than its evidence deserves.
-            # The margin travels alongside it because sigmoid(-6) already rounds to 100%, so
-            # the score alone cannot tell a comfortable call from an overwhelming one, and out
-            # of corpus the calibration is wrong anyway.
+            # Averaged before the sigmoid, not after: one saturated window would otherwise pull
+            # a mean of already-squashed numbers further than its evidence deserves. The margin
+            # travels alongside it, since sigmoid(-6) already rounds to 100%.
             out[name] = {"score": sigmoid(z.mean()),
                          "margin": float(z.mean()),
                          "windows": [sigmoid(v) for v in z]}

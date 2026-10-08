@@ -59,9 +59,8 @@ print(f"bengali 'bn' supported: {'bn' in langs} (expected False)")
 
 # CELL 3: build a reference clip from a real MUCS speaker
 # XTTS clones from 6+ seconds of reference audio and these utterances average ~3.3 s, so
-# several clips from one speaker are concatenated. The speaker is taken from
-# the train split. The fakes have to come from the same voices as the reals,
-# otherwise the detector could separate them on speaker identity alone.
+# several clips from one train-split speaker are concatenated. The fakes have to come from the
+# same voices as the reals, or the detector could separate them on speaker identity alone.
 import pandas as pd, numpy as np, soundfile as sf, soxr
 
 KAGGLE_USER = "aryankumarpandey"

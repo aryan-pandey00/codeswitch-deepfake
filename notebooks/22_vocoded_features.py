@@ -1,21 +1,17 @@
 """Cache frozen XLS-R features for the vocoded set, in the same space as the existing cache.
 
-The genuine class here is the passthrough twins from 21b rather than the frozen real corpus:
-21b measured a scalar separating corpus from vocoded at AUC 0.61, because a vocoded file passes
-the 8 kHz bottleneck twice and the corpus once. Against the twins that falls to 0.54, so
+The genuine class here is the passthrough twins from 21b rather than the frozen real corpus, so
 pairing on source_path gives a fake and a genuine clip sharing utterance, speaker, session and
 processing history.
 
 Any difference in checkpoint, sample rate, normalisation or masking would put these rows in a
 different space, and a head trained across both would fit the difference between two extractors
 rather than between real and fake. So the recipe is copied, not rewritten. One thing differs:
-09 stored all 25 hidden states because the layer was unchosen, layer 20 is locked now, and the
-cache is 143 MB instead of 3.5 GB.
+layer 20 is locked now, so the cache is 143 MB instead of 3.5 GB.
 
 Requirements
     Kaggle notebook, GPU T4, internet on (~1.2 GB). Resumable.
-    Attached inputs: the output of 21, the output of 21b, and codeswitch-deepfake-feats.
-"""
+    Attached inputs: the output of 21, the output of 21b, and codeswitch-deepfake-feats."""
 
 # CELL 1: configuration and mounts
 import os

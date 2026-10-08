@@ -1,21 +1,17 @@
 """Measure how much target-corpus data it takes to close the channel gap.
 
-The baseline reaches 0% EER in-domain and then rejects around half of all genuine speech
-recorded elsewhere while still catching every fake. Adding target data always works and is
-therefore not a contribution, but it is the ceiling the augmentation result has to be read
-against, and it costs no GPU because the features are cached. So it runs first and cheaply.
+Adding target data always works and is therefore not a contribution, but it is the ceiling the
+augmentation result has to be read against, and it costs no GPU because the features are cached.
 
 It answers how far rejection falls when target-corpus speakers enter training at all, how few
-speakers are enough, and whether adapting on one code-switched corpus transfers to the other,
-which separates learning one room from learning to tolerate rooms.
+speakers are enough, and whether adapting on one code-switched corpus transfers to the other.
 
 Speakers added to training are removed from evaluation throughout, so every number is measured
 on speakers the model never heard. Adding a speaker and then scoring them would measure
 memorisation.
 
 Requirements
-    Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats.
-"""
+    Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats."""
 
 # CELL 1: setup
 import os

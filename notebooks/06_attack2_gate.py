@@ -1,18 +1,15 @@
 """Decide the second attack system by ear, and verify fakes match the real audio's band.
 
-A detector trained against one generator learns that generator, so the second attack has to
-differ by architecture rather than weights. FreeVC is VITS-family voice conversion: flow-based
-posterior encoder, HiFi-GAN decoder on WavLM content features, no autoregressive token stage.
-Being text-free it is language-agnostic, so it covers Bengali too, and the fake inherits the
-source recording's prosody and channel, so it cannot carry the text-frontend artifacts a TTS
-system introduces. The XTTS gate spelled `ok` out letter by letter.
+A detector trained against one generator learns that generator, so the second attack differs by
+architecture rather than weights. FreeVC is VITS-family voice conversion: flow posterior
+encoder, HiFi-GAN decoder over WavLM content, no autoregressive token stage. Being text-free it
+covers Bengali and cannot carry the text-frontend artifacts a TTS system introduces.
 
 The last cell checks the bandwidth confound: real audio holds nothing above 4 kHz, generators
 emit 24 kHz, so a fake keeping its full band is separable on bandwidth alone.
 
 Requirements
-    Kaggle notebook, GPU T4, internet on (~1.5 GB). Attached input: the real dataset.
-"""
+    Kaggle notebook, GPU T4, internet on (~1.5 GB). Attached input: the real dataset."""
 
 # CELL 1: environment
 import os
@@ -55,10 +52,9 @@ import IPython.display as ipd
 MAN = pd.read_csv(f"{ROOT}/manifest_real.csv")
 
 # Speakers are matched within condition, not across the corpus. The code-switched sets carry
-# role="test_source" because training is monolingual Hindi, so the real/fake comparison inside
-# the Hinglish condition is between Hinglish speakers. Cloning those fakes from the monolingual
-# train speakers instead would leave every fake in that condition voiced by someone who appears
-# in no real file there. Separable on identity alone, and nothing to do with synthesis.
+# role="test_source" because training is monolingual Hindi. Cloning those fakes from the
+# monolingual train speakers would leave every fake in that condition voiced by someone who
+# appears in no real file there: separable on identity alone, nothing to do with synthesis.
 cs = MAN[MAN.set == "hindi_english"]
 assert len(cs), "no hindi_english rows in the manifest"
 
@@ -168,10 +164,9 @@ ipd.display(ipd.Audio(FAKE))
 
 
 # CELL 5: MMS-TTS Hindi, a candidate for the held-out third attack
-# Single-speaker, so it is unsuitable as a training attack but fine held out for evaluation.
-# The question is whether its tokenizer can represent Latin script at all: MMS vocabularies
-# are built per language, and characters outside the vocabulary are silently dropped, which
-# would delete the English words from a code-switched sentence.
+# Single-speaker, so unsuitable as a training attack but fine held out for evaluation. The
+# question is whether its tokenizer can represent Latin script: MMS vocabularies are built per
+# language and out-of-vocabulary characters are silently dropped, deleting the English words.
 from transformers import AutoTokenizer, VitsModel
 
 tok = AutoTokenizer.from_pretrained(MMS_MODEL)

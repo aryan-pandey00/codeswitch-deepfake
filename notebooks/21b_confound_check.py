@@ -1,21 +1,17 @@
 """Measure whether the vocoded fakes are separable by processing alone, and close it if they are.
 
-Cell 6 of 21 found every vocoder three to eight times below the real side on energy above
-4 kHz, in the same direction for all four. A shared offset across unlike paths is the pipeline,
-not the vocoders: the real corpus passed the 8 kHz bottleneck once, a vocoded file passes it
-again after resynthesis, and that band holds resampler leakage and nothing else.
+Cell 6 of 21 found every vocoder three to eight times below the real side on energy above 4 kHz,
+in the same direction for all four. A shared offset across unlike paths is the pipeline, not the
+vocoders: the real corpus passed the 8 kHz bottleneck once, a vocoded file passes it twice.
 
-Ten clips cannot tell that from noise, so this asks what medians cannot: is one scalar enough
-to separate the classes. Measured 21 Sep, band ratio 0.61 pooled, energy and centroid at
-chance. 0.61 is weak and cells 5 and 6 close it anyway, since a weak scalar correlating with
-the label is still one a model may use. The fakes are not altered; the genuine class is given
-the same processing history instead, so resynthesis is the only difference left.
+Ten clips cannot tell that from noise, so this asks whether one scalar is enough to separate the
+classes. The fakes are not altered; the genuine class is given the same processing history
+instead, so resynthesis is the only difference left.
 
 Requirements
     Kaggle notebook, CPU, no internet, roughly fifteen minutes. Resumable.
     Attached inputs: codeswitch-deepfake-real, codeswitch-deepfake-vocoded.
-    Cells 1-4 read only. Cells 5-6 write passthrough/*.flac and manifest_passthrough.csv.
-"""
+    Cells 1-4 read only. Cells 5-6 write passthrough/*.flac and manifest_passthrough.csv."""
 
 # CELL 1: mounts
 import os
@@ -290,4 +286,4 @@ if NEEDS_FIX and len(PASS):
      .rename(columns={"level_1": "scalar"})
      .assign(n_sources=len(SOURCES))
      .to_csv(CONFOUND, index=False))
-    print(f"\nwrote {CONFOUND}, copy to paper/results/vocoder_confound.csv")
+    print(f"\nwrote {CONFOUND}")

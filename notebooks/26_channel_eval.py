@@ -1,24 +1,20 @@
 """Score the channel grid with every architecture, at the threshold each was deployed on.
 
-Notebook 23 put one set of utterances through five transmission channels. This scores them
-with the four detectors and produces the channel by language table.
+Notebook 23 put one set of utterances through five transmission channels. This scores them with
+the four detectors and produces the channel by language table.
 
 The decision rule is the point. Each threshold is fitted on clean in-domain dev and nothing
-else, the way a deployment would have to fit it, then applied unchanged to every channel. A
-threshold refitted per channel would measure the thresholds rather than the detectors.
+else, then applied unchanged to every channel. A threshold refitted per channel would measure
+the thresholds rather than the detectors.
 
 The grid contains a clean channel, so clean-condition rejection has to reproduce the published
-numbers. If it does not, the scoring path is wrong and nothing else in the run means anything.
-Cell 7 checks that before the table is written.
-
-Each architecture writes its own CSV as it finishes, so a session that dies partway still
-leaves completed rows behind rather than nothing.
+numbers; cell 7 checks that before the table is written. Each architecture writes its own CSV as
+it finishes, so a session that dies partway still leaves completed rows behind.
 
 Requirements
     Kaggle notebook, GPU T4. Internet on for the XLS-R checkpoint and the AASIST clone.
     Attached inputs: notebook 23's output, 17's output, 18's output, 14's output,
-    codeswitch-deepfake-feats, codeswitch-deepfake-real, codeswitch-deepfake-fakes.
-"""
+    codeswitch-deepfake-feats, codeswitch-deepfake-real, codeswitch-deepfake-fakes."""
 
 # CELL 1: mounts and config
 

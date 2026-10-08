@@ -3,8 +3,7 @@
 Everything so far was measured on cached fp16 features from a GPU pass over 16 kHz mono audio.
 The deployed service gets a browser upload, resamples it, runs an int8 ONNX graph on one CPU
 thread, and dots the result with a stored weight vector. Four things change along that path and
-each can move a score across the boundary, so this reproduces the path exactly and reports the
-same numbers the cached evaluation did.
+each can move a score across the boundary, so this reproduces the path exactly.
 
 Two heads are exported: the baseline trained on one corpus, which is the exhibit, and the fixed
 head with a few speakers per code-switched corpus added, which is the product. Both hold those
@@ -12,8 +11,7 @@ speakers out of every number printed here.
 
 Requirements
     Kaggle notebook, CPU. Internet on for the checkpoint and the onnx install in cell 1.
-    Attached inputs: codeswitch-deepfake-feats, -real, -fakes. Cells 5 and 6 dominate runtime.
-"""
+    Attached inputs: codeswitch-deepfake-feats, -real, -fakes. Cells 5 and 6 dominate runtime."""
 
 # CELL 1: configuration and mounts
 import os
@@ -284,10 +282,9 @@ if not KEEP_FP32:
 
 
 # CELL 5: the whole deployment path, on real audio
-# This is the only number that describes what a real user will see. It runs the int8 graph over
-# files the fixed head never trained on and scores them with the exported weights, so any drift
-# between the cache and the runtime shows up as a changed verdict rather than as a small
-# relative error nobody can interpret.
+# The only number that describes what a real user will see. It runs the int8 graph over files
+# the fixed head never trained on and scores them with the exported weights, so drift between
+# the cache and the runtime shows up as a changed verdict rather than a small relative error.
 def head_score(name, f):
     h = HEADS[name]
     return float(((f - h["mu"]) / h["sd"] * h["w"]).sum() + h["b"])
@@ -350,11 +347,9 @@ for secs in (3, 10, 30):
 
 
 # CELL 6: does windowing survive a long clip
-# A live upload will be half a minute, not five seconds, and pooling a mean and a standard
-# deviation over thirty seconds produces a different statistic rather than a longer one. The
-# service cuts the clip into training-length spans instead. That aggregator has to be shown to
-# work before real audio is the thing testing it, so utterances the model already has verdicts
-# for are glued into long clips and rescored.
+# A live upload will be half a minute, and pooling mean and standard deviation over thirty
+# seconds produces a different statistic rather than a longer one, so the service cuts the clip
+# into training-length spans. Utterances with known verdicts are glued up and rescored.
 def windows(audio):
     """Mirror of the function in app/api/service.py.
 
@@ -378,7 +373,7 @@ def windowed(name, audio):
 
 
 def stitch(mask, n_clips=6, per_clip=6):
-    """Glue consecutive utterances from one speaker into a clip of examiner length."""
+    """Glue consecutive utterances from one speaker into a clip of demo length."""
     idx = np.flatnonzero(mask)
     spk = IDX.speaker.values[idx]
     out = []

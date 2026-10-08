@@ -48,8 +48,10 @@ that single feature before the result is believed.
 
 ## Provenance
 
-Source speech: MUCS / OpenSLR 104. Seed 1337. Splits inherited from the real dataset and
-not recomputed. Generation notebook: `07_generate_fakes.py`.
+Source speech: MUCS / OpenSLR [103](https://openslr.org/103/) (monolingual Hindi) and
+[104](https://openslr.org/104/) (code-switched Hindi-English and Bengali-English), both
+CC BY-SA 4.0. Seed 1337. Splits inherited from the real dataset and not recomputed.
+Generation notebook: `07_generate_fakes.py`.
 
 ## Licences
 

@@ -1,19 +1,16 @@
 """Build an Indian English control condition, so switching can be told apart from language.
 
-The dose-response design varies code-switching through the English word ratio and the two rise
-together, so it cannot separate a detector failing on switching from one failing on English
-content. A monolingual Indian English condition does: accurate on Indian English but degraded
-on Hinglish implicates switching, degraded on both implicates out-of-language content.
+The dose-response design varies switching through the English word ratio and the two rise
+together. A monolingual Indian English condition separates them: accurate on Indian English but
+degraded on Hinglish implicates switching, degraded on both implicates out-of-language content.
 
-The English comes from the MUCS train partitions rather than a dedicated corpus, so it arrives
-through the same channel, protocol and speakers. An external corpus would reintroduce the
-recording-chain confound this project exists to isolate. Each English utterance is paired with
-a code-switched one from the same speaker at the nearest word count.
+English comes from the MUCS train partitions, so it arrives through the same channel, protocol
+and speakers, and each English utterance is paired with a code-switched one from the same
+speaker at the nearest word count.
 
 Requirements
     Kaggle notebook, CPU, internet on. Attached input: codeswitch-deepfake-real.
-    Runtime dominated by the ~15 GB download.
-"""
+    Runtime dominated by the ~15 GB download."""
 
 # CELL 1: configuration and environment
 import os
@@ -263,10 +260,9 @@ for t in ENGLISH.transcript.dropna().head(4):
 
 
 # CELL 5: speaker relationship to the evaluation set
-# Determines how the control is described. Shared speakers give the strongest
-# form (speaker held constant against the evaluation set). Disjoint speakers
-# still share corpus, channel and protocol, and the paired design below
-# controls speaker within the comparison that carries the argument.
+# Determines how the control is described. Shared speakers give the strongest form. Disjoint
+# speakers still share corpus, channel and protocol, and the paired design below controls
+# speaker within the comparison that carries the argument.
 eval_speakers = set(BASE[BASE.role == "test_source"].speaker.dropna().astype(str))
 train_speakers = set(TRAIN.speaker.dropna().astype(str))
 shared = eval_speakers & train_speakers

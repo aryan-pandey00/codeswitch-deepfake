@@ -1,21 +1,17 @@
 """Run a published anti-spoofing model on this data without training it.
 
-The three detectors compared so far were all trained here, on one corpus, by one person. A
-reader who suspects the training setup rather than the data is answered only by a model that
-had nothing to do with it. AASIST is graph attention over raw waveform, 297k parameters,
-released with weights trained on ASVspoof2019 LA. It runs as released, and only the threshold
-is fitted on in-domain dev.
+The three detectors compared so far were all trained here, on one corpus. AASIST is graph
+attention over raw waveform, 297k parameters, released with weights trained on ASVspoof2019 LA.
+It runs as released, and only the threshold is fitted on in-domain dev.
 
 Two limits stated plainly. AASIST has seen neither this corpus nor its bandwidth, since every
 file here is bandlimited at 4 kHz where ASVspoof2019 is full-band, so a poor result cannot be
-pinned on the Indian corpus specifically, and it may simply miss attacks postdating its
-training. It also consumes raw amplitude with no per-utterance normalisation, which made level
-invisible to every other model here, so both released and peak-normalised protocols are scored.
+pinned on the Indian corpus specifically. It also consumes raw amplitude with no per-utterance
+normalisation, so both released and peak-normalised protocols are scored.
 
 Requirements
     Kaggle notebook, GPU optional, internet on for the clone. Under 15 minutes.
-    Attached inputs: codeswitch-deepfake-feats, -real, -fakes.
-"""
+    Attached inputs: codeswitch-deepfake-feats, -real, -fakes."""
 
 # CELL 1: configuration, mounts, and the split definition
 import os

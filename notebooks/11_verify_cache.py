@@ -4,18 +4,14 @@ Notebook 09 verified pooled features against unbatched extraction, which establi
 alignment but not that the attention mask is applied: 09 batches in duration order, so a broken
 mask has one or two percent padding to corrupt and the error would sit near fp16 noise.
 
-The decisive version pads deliberately. A short utterance is extracted alone and again batched
-with the longest file in the dataset. With a correct mask the two match to floating-point
-precision; without one the pooled mean is diluted towards zero. Both sides run on CPU, so this
-tests the pooling logic rather than the device the cache was built on.
-
-The second gap: the extractor validates the sample rate it is handed rather than resampling to
-it, so a file at another rate would produce plausible, wrong features silently.
+This pads deliberately. A short utterance is extracted alone and again batched with the longest
+file in the dataset; with a correct mask the two match to floating-point precision. The second
+gap: the extractor validates the sample rate it is handed rather than resampling to it, so a
+file at another rate would produce plausible, wrong features silently.
 
 Requirements
     Kaggle notebook, CPU, internet on for the checkpoint.
-    Attached inputs: codeswitch-deepfake-feats, and the real and fake audio datasets.
-"""
+    Attached inputs: codeswitch-deepfake-feats, and the real and fake audio datasets."""
 
 # CELL 1: mounts
 import os

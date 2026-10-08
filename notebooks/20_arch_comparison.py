@@ -2,9 +2,7 @@
 
 Four detectors were measured in four notebooks, each writing its own scores. This puts them
 under one metric definition so the headline table is computed once rather than assembled by
-hand. Nothing is retrained or rescored. The comparison is not which model is most accurate,
-since every one is essentially perfect on the corpus it was fitted to, but which survives
-leaving it.
+hand. Nothing is retrained or rescored.
 
 A protocol difference is declared rather than smoothed over: the frozen probe was scored on
 whole-utterance pooled features, CNN-BiLSTM and LoRA on a centred five-second span, AASIST on
@@ -12,9 +10,8 @@ the first 64,600 samples, which is its released protocol. Held-out utterances av
 notebook 14 measured windowed against whole-clip scoring at 100% verdict agreement.
 
 Requirements
-    pip install numpy pandas. Runs on the laptop in seconds against whichever score CSVs exist
-    in paper/results/. Missing files are skipped with a note.
-"""
+    pip install numpy pandas. Runs locally in seconds against whichever score CSVs exist in
+    the results directory. Missing files are skipped with a note."""
 
 # CELL 1: load every score file that exists and merge them
 from pathlib import Path

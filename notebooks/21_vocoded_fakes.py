@@ -1,21 +1,17 @@
 """Resynthesise real speech through several vocoders, to teach synthesis rather than a generator.
 
 XTTS-v2 and FreeVC both decode through HiFi-GAN, so between them they showed the model one
-vocoder family, and a downloaded clip from an unknown generator came back genuine at full
-margin. Passing a real recording through a vocoder isolates the resynthesis: utterance,
-speaker, words and channel are held fixed, so nothing can act as a proxy for fakeness.
-Published approach, Wang and Yamagishi, arXiv 2309.06014.
+vocoder family. Passing a real recording through a vocoder isolates the resynthesis: utterance,
+speaker, words and channel are held fixed. Published approach, Wang and Yamagishi, arXiv
+2309.06014.
 
 Four paths, deliberately unalike, since three variations of one idea teach one artifact three
-times. encodec is a neural codec with an adversarial decoder, griffinlim is classical phase
-reconstruction with no learned decoder, mel_hifigan is the family the generators already use,
-lowrank is spectral rank truncation. One is held out as an unseen attack, and which one is a
-parameter so the claim does not rest on a lucky choice.
+times: encodec, griffinlim, mel_hifigan, lowrank. One is held out as an unseen attack, and which
+one is a parameter so the claim does not rest on a lucky choice.
 
 Requirements
     Kaggle notebook, GPU T4 for encodec and the mel vocoder, internet on (~300 MB).
-    Attached input: codeswitch-deepfake-real. Resumable by re-attaching the previous output.
-"""
+    Attached input: codeswitch-deepfake-real. Resumable by re-attaching the previous output."""
 
 # CELL 1: configuration and mounts
 import os

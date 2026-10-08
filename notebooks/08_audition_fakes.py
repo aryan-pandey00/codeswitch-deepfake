@@ -1,18 +1,16 @@
 """Decide whether XTTS kept the English in the code-switched transcripts.
 
-XTTS fakes whose transcript contains a short Latin token run about 15% shorter than the real
-file they pair with, while the rest run 10% longer. Either XTTS is dropping English words in
-`hi` mode, in which case those fakes are monolingual Hindi wearing a code-switched label, or
-utterances with short English words are simply shorter to begin with.
+XTTS fakes whose transcript holds a short Latin token run about 15% shorter than the real file
+they pair with, while the rest run 10% longer. Either XTTS drops English words in `hi` mode, in
+which case those fakes are monolingual Hindi under a code-switched label, or utterances with
+short English words are simply shorter.
 
-The two are separable before anyone listens. If English is being dropped the shortfall should
-deepen as the Latin-script share rises; if the grouping is at fault it should be flat. The
-audition cells then confirm by ear, which is the only way to tell a dropped word from a rushed
-one. FreeVC runs through the same measurement as a reference, since it cannot alter content.
+If English is being dropped the shortfall should deepen as the Latin-script share rises; if the
+grouping is at fault it should be flat. The audition cells then confirm by ear. FreeVC runs
+through the same measurement as a reference, since it cannot alter content.
 
 Requirements
-    Kaggle notebook, CPU. Attached inputs: the real dataset and the generation output.
-"""
+    Kaggle notebook, CPU. Attached inputs: the real dataset and the generation output."""
 
 # CELL 1: locate the two inputs and load the fake manifest
 import os

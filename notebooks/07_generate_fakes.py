@@ -1,20 +1,16 @@
 """Generate the synthetic half of the dataset with two attack systems.
 
 Every real utterance gets one fake, half cloned with XTTS-v2 and half converted with FreeVC, so
-the training condition holds two generator architectures. A later collapse on Hinglish produced
-by the same two generators then cannot be explained as generator novelty.
+the training condition holds two generator architectures.
 
 Two matching rules keep the classes separable only by synthesis. Speakers are matched within
 condition, since a Hinglish fake voiced by a monolingual train speaker would be an identity in
-no real file. And every file passes native -> 8 kHz -> 16 kHz before writing: real audio holds
-nothing above 4 kHz where generators emit 24 kHz, a gap measured at 2.3 million on one clip.
-
-Bengali is FreeVC-only, since XTTS has no `bn`.
+no real file. And every file passes native -> 8 kHz -> 16 kHz before writing, since real audio
+holds nothing above 4 kHz where generators emit 24 kHz. Bengali is FreeVC-only, XTTS has no `bn`.
 
 Requirements
     Kaggle notebook, GPU T4, internet on (~2.5 GB). Attached input: the real dataset.
-    Roughly 7 GPU-hours, so the two generation cells commit independently. Set LIMIT first.
-"""
+    Roughly 7 GPU-hours, so the two generation cells commit independently. Set LIMIT first."""
 
 # CELL 1: configuration and environment
 import os

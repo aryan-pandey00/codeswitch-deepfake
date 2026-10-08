@@ -1,20 +1,17 @@
 """Cache frozen XLS-R features for every real and fake utterance.
 
-Every later experiment reads this cache instead of running the frontend, so the cost is paid
-once. The frontend is frozen throughout, which is what makes a cache valid at all.
+Every later experiment reads this cache instead of running the frontend. The frontend is frozen
+throughout, which is what makes a cache valid at all.
 
-Frame-level features are not storable: 31,922 utterances at 50 fps and 1024 dimensions is
-roughly 16 GB in fp16. Stored instead is the mean and standard deviation over time of all 25
-hidden states. Pooling loses temporal detail but keeping every layer keeps the choice that
-matters open, since spoofing artifacts are not concentrated in the final layer and a later
-layer sweep then costs nothing.
+Frame-level features are not storable: 31,922 utterances at 50 fps and 1024 dimensions is about
+16 GB in fp16. Stored instead is the mean and standard deviation over time of all 25 hidden
+states. Keeping every layer keeps the choice open, since spoofing artifacts are not concentrated
+in the final layer and a later layer sweep then costs nothing.
 
 Requirements
     Kaggle notebook, GPU T4. Internet on for the checkpoint (~1.2 GB).
     Attached inputs: codeswitch-deepfake-real and codeswitch-deepfake-fakes.
-    Output is about 3 GB, so commit rather than running interactively. To resume a killed run,
-    attach the previous commit's output; `feats` is found the way the fakes directory is.
-"""
+    Output is about 3 GB, so commit rather than running interactively."""
 
 # CELL 1: configuration and mounts
 import os

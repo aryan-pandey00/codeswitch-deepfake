@@ -1,25 +1,19 @@
 """Degrade a paired sample through four transmission channels.
 
 Corpus comparisons confound room, microphone and session at once. This makes the channel the
-only variable: one set of utterances through real telephony codecs, scored against itself.
-Degradation is CPU and ffmpeg while the evaluation needs a GPU, so they are separate files.
-
-The grid is paired, so the same utterances pass through every channel and the effect is
-within-utterance. It is sampled because all 31,922 through four channels is five times the
-cost of the original feature pass.
+only variable: one set of utterances through real telephony codecs, scored against itself. The
+grid is paired, so the same utterances pass through every channel, and sampled because all
+31,922 through four channels is five times the cost of the original feature pass.
 
 Bandwidth is neutralised and the codecs cannot undo it. Everything already passed a native,
-8 kHz, 16 kHz bottleneck, so the clean set carries no measurable energy above 4 kHz at all
-(median 0.000000). The codecs add a little coding noise back rather than removing speech
-bandwidth: AMR-NB 2e-6, G.711 3e-6, Opus 6e-6, Opus with loss 1.0e-4. Separability between
-channels is the treatment. The confound would be a channel landing differently on real and
-fake, which cell 6 measures before any GPU is spent.
+8 kHz, 16 kHz bottleneck, so the clean set carries no measurable energy above 4 kHz. The codecs
+add a little coding noise back rather than removing speech bandwidth. The confound would be a
+channel landing differently on real and fake, which cell 6 measures before any GPU is spent.
 
 Requirements
     Kaggle notebook, CPU.
     Attached inputs: codeswitch-deepfake-real and codeswitch-deepfake-fakes.
-    Output is roughly 4 GB of FLAC.
-"""
+    Output is roughly 4 GB of FLAC."""
 
 # CELL 1: configuration and mounts
 

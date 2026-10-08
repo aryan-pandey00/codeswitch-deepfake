@@ -1,22 +1,19 @@
 """Fine-tune XLS-R with LoRA adapters, to separate the frozen frontend from the finding.
 
-The linear probe leaves the frontend untouched, which is what makes its result clean and also
-leaves an opening: a frozen representation cannot adapt to a new recording condition, so a
-reader can ask whether the collapse is the cost of freezing. This lets the encoder move.
-Adapters go into the query and value projections of every retained block, roughly 657,000
-trainable parameters out of 315 million, on the same splits with the same speakers held out.
+A frozen representation cannot adapt to a new recording condition, so a reader can ask whether
+the collapse is the cost of freezing. This lets the encoder move. Adapters go into the query and
+value projections of every retained block, roughly 657,000 trainable parameters out of 315
+million, on the same splits with the same speakers held out.
 
-They are implemented here rather than pulled from a library: about twenty lines, no three-way
-version dependency in a notebook that runs unattended, and the method section can state what
-was adapted instead of naming a package.
+They are implemented here rather than pulled from a library: about twenty lines, and no
+three-way version dependency in a notebook that runs unattended.
 
-Every clip is scored on a centred five-second span, which is what the service windows, where
-the cached probe numbers pooled whole utterances. Utterances average 4.7 s so they mostly agree.
+Every clip is scored on a centred five-second span, which is what the service windows, where the
+cached probe numbers pooled whole utterances. Utterances average 4.7 s so they mostly agree.
 
 Requirements
     Kaggle notebook, GPU T4, roughly 1.5 hours.
-    Attached inputs: codeswitch-deepfake-feats (index.csv only), -real, -fakes.
-"""
+    Attached inputs: codeswitch-deepfake-feats (index.csv only), -real, -fakes."""
 
 # CELL 1: configuration, mounts, and the split definition
 import os

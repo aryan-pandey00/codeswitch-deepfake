@@ -1,18 +1,15 @@
 """Build the real-audio dataset once and publish it as a reusable Kaggle Dataset.
 
-/kaggle/working is wiped between sessions, so starting from the raw corpora meant
-re-downloading 7 GB every time. This does it once and writes a private Dataset that mounts
-read-only. It replaces the five acquisition scripts in superseded/ and must run top to bottom
-in a fresh container.
+/kaggle/working is wiped between sessions, so this does the download once and writes a private
+Dataset that mounts read-only. Run it top to bottom in a fresh container.
 
 Resampling is native -> 8 kHz -> 16 kHz deliberately. The monolingual sets are natively 8 kHz
-and the code-switched 16 kHz, a split falling exactly on the train/test boundary, so without
-the bottleneck any later result would be attributable to bandwidth.
+and the code-switched 16 kHz, a split falling on the train/test boundary, so without the
+bottleneck any later result would be attributable to bandwidth.
 
 Requirements
     Kaggle notebook, no accelerator, internet on. 45-75 min, mostly download.
-    Produces ~14,000 FLAC and manifest_real.csv.
-"""
+    Produces ~14,000 FLAC and manifest_real.csv."""
 
 
 # CELL 1: environment, disk headroom, dependencies
@@ -136,11 +133,9 @@ print(f"\n/kaggle/temp free: {free/2**30:.1f} GB")
 
 
 # CELL 4: build the manifest (corrected parser)
-# Two layouts to handle:
-# Kaldi segmented (the code-switched sets): wav.scp, segments and utt2spk, several
-# utterances cut from one long recording. Flat (the monolingual Hindi sets): one wav per
-# utterance, id <prompt>_<speaker>, so the speaker is the suffix. Reading it as the prefix
-# reports 386 speakers, which is the prompt count against a real count of 19.
+# Two layouts. Kaldi segmented (code-switched): wav.scp, segments, utt2spk, several utterances
+# cut from one recording. Flat (monolingual Hindi): one wav per utterance, id
+# <prompt>_<speaker>, so the speaker is the suffix; reading it as the prefix reports 386.
 import glob
 
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")

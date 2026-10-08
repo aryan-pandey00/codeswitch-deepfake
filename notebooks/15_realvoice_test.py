@@ -1,22 +1,17 @@
 """Score real phone recordings with the exported detectors, without the audio leaving the machine.
 
 Every number so far comes from two studio-grade read-speech corpora. The deployed model gets a
-phone, in a room, over a codec, from someone talking rather than reading. That is a recording
-condition neither head has heard, and an unfamiliar recording condition is the whole finding of
-this project, so this is the test most likely to disagree with everything reported so far.
+phone, in a room, over a codec, from someone talking rather than reading, which is the test most
+likely to disagree with everything reported so far.
 
-It runs locally on purpose. The clips are other people's voices and a private Kaggle dataset is
-still an upload to a third party. Nothing writes audio anywhere; the only output is a CSV.
-
-Scoring is byte-for-byte the path in app/api/service.py. A disagreement between this file and
-the deployed service would mean one of them is wrong.
+It runs locally on purpose: the clips are other people's voices. Nothing writes audio anywhere;
+the only output is a CSV. Scoring is byte-for-byte the path in app/api/service.py.
 
 Requirements
     Python 3.11 (onnxruntime has no 3.14 wheels).
     pip install onnxruntime soundfile soxr imageio-ffmpeg pandas numpy
     frontend_int8.onnx and heads.json from notebook 14, in MODEL_DIR.
-    Clips in CLIP_DIR named speaker_language_source_index_style.ext, style read or talk.
-"""
+    Clips in CLIP_DIR named speaker_language_source_index_style.ext, style read or talk."""
 
 import io
 import re
@@ -33,9 +28,11 @@ import soxr
 import onnxruntime as ort
 import imageio_ffmpeg
 
-MODEL_DIR = Path(r"E:\CodeSwitch-Deepfake\models")
-CLIP_DIR = Path(r"E:\CodeSwitch-Deepfake\data\realvoice")
-OUT_CSV = Path(r"E:\CodeSwitch-Deepfake\data\realvoice_scores.csv")
+# Relative to the repository root, so the clips never need an absolute path recorded anywhere.
+ROOT = Path(__file__).resolve().parents[1]
+MODEL_DIR = ROOT / "models"
+CLIP_DIR = ROOT / "data" / "realvoice"
+OUT_CSV = ROOT / "data" / "realvoice_scores.csv"
 
 SR = 16000
 BOTTLENECK_HZ = 8000

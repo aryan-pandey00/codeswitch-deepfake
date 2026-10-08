@@ -1,10 +1,7 @@
 """Summarise the real-phone acceptance test.
 
-Notebook 15 scored 45 clips recorded on other people's own phones and wrote one row per clip
-to data/realvoice_scores.csv. This aggregates those rows and computes nothing new.
-
-    realphone_scores.csv      per-clip, with the scope decision made explicit
-    realphone_acceptance.csv  rates by source, language and style
+Notebook 15 scored 45 clips recorded on other people's own phones and wrote one row per clip.
+This aggregates those rows and computes nothing new.
 
 One speaker is outside the population measured here, and notebook 15 excluded them from the
 headline rate. That exclusion is carried as an `in_scope` column rather than applied silently,
@@ -12,11 +9,7 @@ so the arithmetic stays checkable against all 45 rows.
 
 Nothing was rejected, and zero of forty-four is not zero percent, so every rate carries the
 Wilson interval from notebook 16. Rejections cluster by speaker, so the speaker-level bound is
-computed too and it is the wider one.
-
-Median energy above 4 kHz is in the table because it is what shows the three sources to be
-three channels rather than three names for one.
-"""
+computed too and it is the wider one."""
 
 from pathlib import Path
 
@@ -28,8 +21,7 @@ IN_CSV = ROOT / "data" / "realvoice_scores.csv"
 OUT_DIR = ROOT / "paper" / "results"
 
 HEADS = ("baseline", "fixed")
-# Notebook 15's definition, repeated rather than imported: the exclusion is a claim about the
-# population, so it should be legible in the file that publishes the number.
+# Repeated from notebook 15, not imported, so the exclusion is visible where the rate is written.
 OUT_OF_SCOPE = {"english-foreign"}
 
 

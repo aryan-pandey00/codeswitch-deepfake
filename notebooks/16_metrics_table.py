@@ -1,19 +1,16 @@
 """Compute the full metric set for both detectors across every evaluation condition.
 
-Everything reported so far has been equal error rate and the rate at which genuine speech is
-rejected. Those are the right metrics for this finding but not the ones a reader looks for
-first. This produces accuracy, precision, recall, F1 and AUC once, so every later document
-quotes the same numbers.
+Produces accuracy, precision, recall, F1 and AUC once, so every later document quotes the same
+numbers rather than recomputing them.
 
 The positive class is fake, so the two error rates are named rather than left to the reader:
-FAR is a fake accepted, FRR is genuine speech rejected. This project is about the second, which
-EER averages away. Rates carry Wilson intervals, because several conditions have zero errors
-out of a few hundred trials and a bare 0.0% invites a stronger claim than the sample supports.
+FAR is a fake accepted, FRR is genuine speech rejected. Rates carry Wilson intervals, because
+several conditions have zero errors out of a few hundred trials and a bare 0.0% invites a
+stronger claim than the sample supports.
 
 Requirements
     Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats. Optionally the exported
-    heads.json, which makes the numbers describe the shipped artifact rather than a copy.
-"""
+    heads.json, which makes the numbers describe the shipped artifact rather than a copy."""
 
 # CELL 1: configuration and the feature cache
 import os
@@ -202,11 +199,10 @@ M = pd.DataFrame(rows)
 M.to_csv(f"{OUT}/metrics_main.csv", index=False)
 M[["model", "condition", "tp", "fp", "fn", "tn"]].to_csv(f"{OUT}/confusion_main.csv", index=False)
 
-# The raw scores let every figure be drawn later from one run, so the report and the paper
-# cannot end up quoting different numbers.
-# Only the non-overlapping conditions are labelled. "all" is the union of the monolingual and
-# code-switched rows and "pooled" is the union of the corpora, so labelling those too would
-# overwrite the finer label and silently lose it. Reconstruct them from set and cs_bin.
+# Raw scores let every figure be drawn later from one run, so two documents cannot quote
+# different numbers. Only non-overlapping conditions are labelled: "all" is the union of the
+# monolingual and code-switched rows and "pooled" the union of the corpora, so labelling those
+# would overwrite the finer label. Reconstruct them from set and cs_bin.
 LEAF = [(label, mask) for label, mask in CONDITIONS
         if "corpus, all" not in label and "pooled" not in label]
 

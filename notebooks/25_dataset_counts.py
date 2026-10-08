@@ -1,22 +1,16 @@
 """Count the dataset composition from the two frozen manifests.
 
-Notebook 02 printed these counts for the real half and notebook 07 for the fakes; both
-printouts died with their sessions. This reads the manifests and counts. Nothing is generated
-or re-derived, no audio is touched.
+Notebook 02 printed these counts for the real half and notebook 07 for the fakes; both printouts
+died with their sessions. This reads the manifests and counts. Nothing is generated or
+re-derived, no audio is touched.
 
-It carries the three properties the design rests on rather than sizes alone, since this is
-where a reader checks the design:
-
-    the train/dev split is speaker-disjoint, asserted rather than described
-    every fake is paired to a real utterance that is in the manifest
-    the code-switching bins are populated well enough to be read as bins
-
-Long format, with a `section` column marking which question each block answers.
+It carries the three properties the design rests on rather than sizes alone: the train/dev split
+is speaker-disjoint, asserted rather than described; every fake is paired to a real utterance in
+the manifest; and the code-switching bins are populated well enough to be read as bins.
 
 Requirements
     Kaggle notebook, CPU.
-    Attached inputs: codeswitch-deepfake-real and codeswitch-deepfake-fakes.
-"""
+    Attached inputs: codeswitch-deepfake-real and codeswitch-deepfake-fakes."""
 
 # CELL 1: mounts
 

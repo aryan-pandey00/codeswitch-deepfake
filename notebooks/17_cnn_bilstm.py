@@ -1,19 +1,17 @@
-"""Retrain an MFCC CNN-BiLSTM on these splits, to test whether the collapse is ours.
+"""Retrain an MFCC CNN-BiLSTM on these splits, to test whether the collapse is architectural.
 
-The finding so far rests on one architecture, a frozen self-supervised transformer with a
-linear head, and the obvious reply is that a different model would not have the problem. That
-has to be answered with a model. CNN-BiLSTM over MFCCs shares no component with XLS-R and
-learns its own filters rather than inheriting a representation from 436,000 hours.
+The finding so far rests on one architecture, a frozen self-supervised transformer with a linear
+head. CNN-BiLSTM over MFCCs shares no component with XLS-R and learns its own filters rather
+than inheriting a representation from 436,000 hours.
 
-Two choices avoid shortcuts rather than chase accuracy. Inputs are a fixed five-second span at
-a ten-millisecond hop, the shape the original architecture used and the window the service
-scores. Short clips are extended by wrapping rather than zero-padding, since generated clips run
-systematically shorter and the model could otherwise separate classes on its own padding.
+Two choices avoid shortcuts rather than chase accuracy. Inputs are a fixed five-second span at a
+ten-millisecond hop, the window the service scores. Short clips are extended by wrapping rather
+than zero-padding, since generated clips run systematically shorter and the model could
+otherwise separate classes on its own padding.
 
 Requirements
     Kaggle notebook, GPU T4, 30-40 minutes.
-    Attached inputs: codeswitch-deepfake-feats (index.csv only), -real, -fakes.
-"""
+    Attached inputs: codeswitch-deepfake-feats (index.csv only), -real, -fakes."""
 
 # CELL 1: configuration, mounts, and the split definition
 import os
@@ -231,10 +229,9 @@ print(f"wrote curves_cnn_bilstm.csv, {len(CURVES)} epochs total")
 
 
 # CELL 5: score everything, on the threshold the linear probe used
-# The decision rule has to be the same one the other architecture was judged by, or the
-# comparison measures the thresholds rather than the models. There, the threshold was fitted on
-# in-domain dev and nothing else, so the same is done here: the probability that separates the
-# dev classes, found without ever looking at a target corpus.
+# The decision rule has to be the one the other architecture was judged by, or the comparison
+# measures the thresholds rather than the models. There it was fitted on in-domain dev and
+# nothing else, so the same is done here, without ever looking at a target corpus.
 def predict_all(model):
     out = np.empty(len(IDX), dtype=np.float32)
     for i in range(0, len(IDX), 256):

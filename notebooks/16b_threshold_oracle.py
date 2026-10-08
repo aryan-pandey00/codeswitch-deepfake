@@ -1,19 +1,17 @@
 """Test whether the collapse is a calibration failure that a better threshold would fix.
 
 The frozen probe reaches 99.7 AUC and 2.4% EER on the Hindi-English corpus and at the same time
-rejects half of all genuine speech. Both are true: the genuine score distribution slides up
-until its median sits on the boundary, so the ordering survives and the verdicts do not. If the
-scores merely shifted, the fix would be a threshold rather than a training set.
+rejects half of all genuine speech. The genuine score distribution slides up until its median
+sits on the boundary, so the ordering survives and the verdicts do not.
 
 The comparison is deliberately unfair in the objection's favour, fitting the oracle threshold on
-the entire target corpus with its labels. Running it across every architecture also separates
-two failures that look identical in a verdict: a model whose ranking survives can in principle
-be rescued by a threshold, one whose EER has itself collapsed cannot be.
+the entire target corpus with its labels. Running it across every architecture also separates a
+model whose ranking survives, which a threshold can in principle rescue, from one whose EER has
+itself collapsed.
 
 Requirements
-    pip install numpy pandas. Runs on the laptop in seconds, against scores_raw.csv and any of
-    scores_cnn_bilstm.csv, scores_lora.csv.
-"""
+    pip install numpy pandas. Runs locally in seconds, against scores_raw.csv and any of
+    scores_cnn_bilstm.csv, scores_lora.csv."""
 
 from pathlib import Path
 

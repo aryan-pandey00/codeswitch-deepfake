@@ -1,12 +1,8 @@
 """Attribute the Hinglish degradation to a cause before acting on it.
 
-Notebook 10 measured a Hindi-trained detector going from 0% EER on monolingual Hindi to 6.69%
-on Hindi-English, rejecting 32% of genuine code-switched speech. The magnitude is not in
-question, the cause is, and four readings of that notebook's own output argue against
-code-switching: rejection is flat across intensity bins and worst in the lowest; the regression
-on switch rate is null and negatively signed; Bengali-English degrades six times less despite
-being more code-switched; and 23 of 25 layers sat at exactly 0.00% dev EER, so the layer behind
-the 6.69% was a tie-break on fourth-decimal noise while layer 20 gives 2.37%.
+Notebook 10 measured a Hindi-trained detector going from 0% EER on monolingual Hindi to 6.69% on
+Hindi-English, rejecting 32% of genuine code-switched speech. The magnitude is not in question,
+the cause is.
 
 The control was already in the dataset. Both code-switched corpora contain genuine monolingual
 utterances, `cs_bin == "mono"`, from the same speakers in the same sessions, differing in
@@ -15,8 +11,7 @@ for switching to explain. Everything is computed at three layers, since a conclu
 one depth and not another is a fact about depth.
 
 Requirements
-    Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats.
-"""
+    Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats."""
 
 # CELL 1: baseline, refit per layer
 import os

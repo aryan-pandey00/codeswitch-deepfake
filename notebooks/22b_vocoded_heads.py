@@ -1,22 +1,16 @@
 """Train a head on vocoded fakes and ask whether it generalises to generators it never saw.
 
-A head trained on XTTS-v2 and FreeVC returned an unknown generator's clip as genuine at full
-margin, and both decode through HiFi-GAN, so what it held was one vocoder family. 21's premise
-is that fakes supplied as audio through a resynthesis bottleneck teach the property every
-generator shares instead of the fingerprint one of them leaves. Four questions: per-path catch
-rates including the held-out one, whether a vocoded-trained head catches the two generators it
-never saw, how badly the original head misses vocoded fakes, and whether any of it costs false
-rejection of genuine speech.
+Four questions: per-path catch rates including the held-out one, whether a vocoded-trained head
+catches the two generators it never saw, how badly the original head misses vocoded fakes, and
+whether any of it costs false rejection of genuine speech.
 
-Recipe copied from 13 so the numbers stack. Three departures forced by the data: the vocoded
-set has no dev split, since 21 drew sources from `split=="train"` only, so one is carved by
-speaker; classes are 4:1 so `class_weight` is balanced; and the two caches are stacked, which
-22 verified is legitimate at a scale ratio of 0.98.
+Recipe copied from 13 so the numbers stack. Three departures forced by the data: the vocoded set
+has no dev split, so one is carved by speaker; classes are 4:1 so `class_weight` is balanced;
+and the two caches are stacked, which 22 verified is legitimate at a scale ratio of 0.98.
 
 Requirements
     Kaggle notebook, CPU, no internet, a few minutes.
-    Attached inputs: the output of notebook 22, and codeswitch-deepfake-feats.
-"""
+    Attached inputs: the output of notebook 22, and codeswitch-deepfake-feats."""
 
 # CELL 1: mounts and the two caches
 import os
@@ -241,5 +235,4 @@ for q in ("per_path", "forward"):
 
 print()
 print(R.to_string(index=False))
-print("\nCopy to paper/results/vocoded_heads.csv and fill the Results Index row in "
-      "paper/FINDINGS.md. A number that is not in that index does not exist.")
+print(f"\nResults written to {OUT_CSV}.")

@@ -1,25 +1,17 @@
 """Measure how much target-corpus data it takes to close the channel gap.
 
-The baseline established that a detector trained on one corpus reaches 0% EER in-domain and
-then rejects around half of all genuine speech recorded elsewhere, while still catching every
-fake.
-The remaining question is what fixes it, and there are two answers with very different value.
-The useful one is augmentation: teach the detector channel invariance without ever showing it
-the target corpora. The other is simply adding target data, which always works and is therefore
-not a contribution, but it is the ceiling the augmentation result has to be read against, and
-it costs no GPU because every feature it needs is already cached.
+The baseline reaches 0% EER in-domain and then rejects around half of all genuine speech
+recorded elsewhere while still catching every fake. Adding target data always works and is
+therefore not a contribution, but it is the ceiling the augmentation result has to be read
+against, and it costs no GPU because the features are cached. So it runs first and cheaply.
 
-So this runs first and cheaply. It answers three things the augmentation experiment will be
-judged against:
-
-    how far rejection falls when target-corpus speakers enter training at all;
-    how few speakers are enough, which is the data-efficiency curve reviewers ask for;
-    and whether adapting on one code-switched corpus transfers to the other, which separates
-    "learned this room" from "learned to tolerate rooms".
+It answers how far rejection falls when target-corpus speakers enter training at all, how few
+speakers are enough, and whether adapting on one code-switched corpus transfers to the other,
+which separates learning one room from learning to tolerate rooms.
 
 Speakers added to training are removed from evaluation throughout, so every number is measured
-on speakers the model has never heard. That is the whole point: adding a speaker and then
-scoring them would measure memorisation.
+on speakers the model never heard. Adding a speaker and then scoring them would measure
+memorisation.
 
 Requirements
     Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats.
@@ -175,7 +167,9 @@ for n in N_ADDED:
 
 POOLED = (pd.DataFrame(rows).groupby("n_added_per_corpus").mean().round(2))
 print(POOLED.to_string())
-POOLED.to_csv("/kaggle/working/fix_data_pooled.csv", index=False)
+# The group key is the index here, so writing with index=False drops the number of speakers
+# added and leaves a curve with no x-axis. It is the column Figure 5 is plotted against.
+POOLED.reset_index().to_csv("/kaggle/working/fix_data_pooled.csv", index=False)
 
 print("\nceiling for the augmentation experiment to be read against: "
       f"{float(POOLED.held_rej.iloc[-1]):.1f}% rejection with "

@@ -1,34 +1,20 @@
 """Resynthesise real speech through several vocoders, to teach synthesis rather than a generator.
 
-The detectors here trained against XTTS-v2 and FreeVC, which both decode through HiFi-GAN, so
-between them they show the model one vocoder family. A downloaded clip from an unknown generator
-came back genuine at full margin from both heads.
-
-Passing a real recording through a vocoder isolates the resynthesis: utterance, speaker, words
-and channel are all held fixed. A model cannot then learn a speaker or a corpus as a proxy for
-fakeness, because the genuine twin of every fake is in the same training set. Published
-approach, Wang and Yamagishi, arXiv 2309.06014, on a frozen SSL frontend.
+XTTS-v2 and FreeVC both decode through HiFi-GAN, so between them they showed the model one
+vocoder family, and a downloaded clip from an unknown generator came back genuine at full
+margin. Passing a real recording through a vocoder isolates the resynthesis: utterance,
+speaker, words and channel are held fixed, so nothing can act as a proxy for fakeness.
+Published approach, Wang and Yamagishi, arXiv 2309.06014.
 
 Four paths, deliberately unalike, since three variations of one idea teach one artifact three
-times:
-
-    encodec      neural audio codec, quantised latent, adversarially trained decoder
-    griffinlim   classical phase reconstruction from a magnitude mel, no learned decoder
-    mel_hifigan  learned mel vocoder, the family XTTS and FreeVC already decode through
-    lowrank      spectral rank truncation, and the least like the other three
-
-One is held out as an unseen attack, and which one is a parameter rather than a constant so the
-claim does not rest on a lucky choice.
-
-Output keeps the same native -> 8 kHz -> 16 kHz bottleneck as every other file here, and each
-source keeps its role and split, so a fake never crosses to the evaluation side.
+times. encodec is a neural codec with an adversarial decoder, griffinlim is classical phase
+reconstruction with no learned decoder, mel_hifigan is the family the generators already use,
+lowrank is spectral rank truncation. One is held out as an unseen attack, and which one is a
+parameter so the claim does not rest on a lucky choice.
 
 Requirements
-    Kaggle notebook, GPU T4 for encodec and the mel vocoder, CPU is enough for the rest.
-    Internet: On, for the encodec checkpoint (~300 MB).
-    Attached input: codeswitch-deepfake-real.
-    Resumable. Re-attach the previous commit's output to continue a killed run.
-    Writes vocoded/*.flac and manifest_vocoded.csv.
+    Kaggle notebook, GPU T4 for encodec and the mel vocoder, internet on (~300 MB).
+    Attached input: codeswitch-deepfake-real. Resumable by re-attaching the previous output.
 """
 
 # CELL 1: configuration and mounts
@@ -238,7 +224,7 @@ PATHS = {
 
 # Held out and scored only as an unseen attack, named here so it travels in the manifest.
 HELD_OUT = "lowrank"
-print(f"paths: {list(PATHS)}   held out for evaluation: {HELD_OUT}")
+print(f"paths: {list(PATHS)}, held out for evaluation: {HELD_OUT}")
 
 
 # CELL 4: a smoke test before committing to the full pass
@@ -390,7 +376,7 @@ src_row = SRC[SRC.path == demo.iloc[0].source_path].iloc[0]
 print("source")
 ipd.display(ipd.Audio(f"{REAL_ROOT}/{src_row.path}"))
 for r in demo.itertuples():
-    print(f"{r.vocoder}{'  (held out)' if r.held_out else ''}")
+    print(f"{r.vocoder}{' (held out)' if r.held_out else ''}")
     ipd.display(ipd.Audio(os.path.join(OUT, r.fname)))
 
 print("""

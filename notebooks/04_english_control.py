@@ -1,25 +1,18 @@
 """Build an Indian English control condition, so switching can be told apart from language.
 
-The dose-response evaluation varies code-switching intensity through the English word
-ratio, and the two rise together. That design alone cannot separate a detector failing on
-switching from one failing on English content however it arrives. A monolingual Indian
-English condition does separate them: accurate on Indian English but degraded on Hinglish
-implicates switching, degraded on both implicates out-of-language content.
+The dose-response design varies code-switching through the English word ratio and the two rise
+together, so it cannot separate a detector failing on switching from one failing on English
+content. A monolingual Indian English condition does: accurate on Indian English but degraded
+on Hinglish implicates switching, degraded on both implicates out-of-language content.
 
-The English comes from the MUCS/OpenSLR 104 train partitions rather than a dedicated Indian
-English corpus. At the 1.2% pure-English rate measured on the test partitions that still
-yields several hundred utterances, and they arrive through the same channel, protocol and
-speaker population as the evaluation set. An external corpus would reintroduce exactly the
-recording-chain confound this project exists to isolate.
-
-Each English utterance is paired with a code-switched one from the same speaker at the
-nearest word count, holding speaker and length constant so switching is the only variable.
-Preprocessing matches the main dataset: native rate -> 8 kHz -> 16 kHz mono FLAC.
+The English comes from the MUCS train partitions rather than a dedicated corpus, so it arrives
+through the same channel, protocol and speakers. An external corpus would reintroduce the
+recording-chain confound this project exists to isolate. Each English utterance is paired with
+a code-switched one from the same speaker at the nearest word count.
 
 Requirements
     Kaggle notebook, CPU, internet on. Attached input: codeswitch-deepfake-real.
-    Runtime is dominated by the ~15 GB download.
-    Produces audio/*.flac, manifest_english_control.csv and pairs.csv.
+    Runtime dominated by the ~15 GB download.
 """
 
 # CELL 1: configuration and environment
@@ -424,7 +417,7 @@ print(KEEP.groupby(["role", "set"]).agg(
 
 for role in ("english_indian", "cs_paired"):
     n = int((KEEP.role == role).sum())
-    print(f"{role} {n} utts  "
+    print(f"{role} {n} utts, "
           f"{'ok' if n >= MIN_PER_ROLE else 'below threshold'}")
 
 COLUMNS = ["fname", "path", "utt_id", "set", "lang", "kind", "speaker",

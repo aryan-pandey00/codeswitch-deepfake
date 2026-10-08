@@ -1,21 +1,15 @@
 """Verify the XLS-R frontend loads and runs before training code depends on it.
 
-Everything downstream assumes a wav2vec2-style self-supervised frontend is available on
-Kaggle and produces frame-level features from the frozen real-audio dataset. This
-confirms that end to end and records what the feature extractor needs: hidden size,
-frame rate, parameter count.
+Confirms end to end that a wav2vec2-style frontend is available on Kaggle and produces
+frame-level features from the frozen dataset, and records hidden size, frame rate and
+parameter count.
 
-The final cells also measure the deployed artifact size. Hosting stays free only if
-the always-warm container fits in about 2 GiB, which the plan resolves by shipping
-int8 ONNX rather than fp32 PyTorch. That is an arithmetic claim until something
-weighs it, so this weighs it.
+The last cells weigh the deployed artifact. Hosting stays free only if the always-warm
+container fits in about 2 GiB, which is why int8 ONNX ships rather than fp32 PyTorch.
 
 Requirements
-    Kaggle notebook, CPU is sufficient (no GPU quota needed).
-    Internet: On, for the checkpoint download (~1.2 GB).
+    Kaggle notebook, CPU. Internet on for the ~1.2 GB checkpoint.
     Attached input: the frozen real-audio dataset.
-    Optional: an HF_TOKEN secret. The checkpoint is public, so this only lifts
-    anonymous rate limits.
 """
 
 # CELL 1: environment
@@ -178,17 +172,10 @@ print(f"onnx int8 output {onnx_out.shape}")
 print(f"cpu inference {onnx_s:.1f}s, RTF {onnx_s/row.dur:.2f}")
 print(f"cosine vs fp32 {cos:.4f}")
 
-# This is a sanity check, not an acceptance test. Drift compounds across 24 layers, so a
-# cosine in the mid-0.90s is ordinary for dynamic int8 and does not by itself rule out
-# deploying the quantised graph.
-# 
-# It only becomes a problem if the classifier is trained on fp32 features and the int8 graph
-# is substituted at deploy time, because the calibrated threshold then sits in the wrong
-# place, which is exactly the failure mode where genuine speech gets called fake. Calibrate
-# the threshold on whichever graph ships and the drift stops mattering.
-# 
-# The real acceptance test is downstream EER on held-out code-switched data, run in W7.
-# fp32 ONNX also fits the memory ceiling, so staying unquantised is always available.
+# A sanity check, not an acceptance test. Drift compounds across 24 layers, so a cosine in the
+# mid-0.90s is ordinary for dynamic int8. It only becomes a problem if the classifier is trained
+# on fp32 features and the int8 graph is substituted at deploy time, because the threshold then
+# sits in the wrong place. Calibrate on whichever graph ships. fp32 ONNX also fits the ceiling.
 print(f"cosine {cos:.4f}, "
       + ("close to fp32" if cos > 0.99 else
          "moderate drift, fine if the threshold is calibrated on this graph" if cos > 0.90

@@ -1,30 +1,18 @@
 """Test whether the collapse is a calibration failure that a better threshold would fix.
 
-The metrics carry an apparent contradiction. The frozen XLS-R probe reaches 99.7 AUC and 2.4%
-equal error rate on the Hindi-English corpus, which is near-perfect ranking, and at the same
-time rejects half of all genuine speech. Both are true: the genuine score distribution slides up
-until its median sits on the decision boundary, so the ordering survives and the verdicts do
-not.
+The frozen probe reaches 99.7 AUC and 2.4% EER on the Hindi-English corpus and at the same time
+rejects half of all genuine speech. Both are true: the genuine score distribution slides up
+until its median sits on the boundary, so the ordering survives and the verdicts do not. If the
+scores merely shifted, the fix would be a threshold rather than a training set.
 
-That invites the obvious objection, and it has to be answered before a reviewer raises it. If
-the scores merely shifted, the fix would be a threshold rather than a training set, and the
-contribution would be far smaller than claimed.
-
-The comparison is deliberately unfair in the objection's favour. The oracle threshold is fitted
-on the entire target corpus with its labels, which no deployment has and which is far more
-target information than the eight speakers the fixed head was trained on. If the retrained head
-still wins, the objection is closed.
-
-Running it across every architecture also separates two different failures that look identical
-in a verdict. A model whose ranking survives can in principle be rescued by a threshold; a model
-whose equal error rate has itself collapsed cannot be rescued by any threshold, because the
-equal error rate is the floor a threshold can reach.
-
-Runs on the laptop against the CSVs the training notebooks already produced. Seconds, no GPU.
+The comparison is deliberately unfair in the objection's favour, fitting the oracle threshold on
+the entire target corpus with its labels. Running it across every architecture also separates
+two failures that look identical in a verdict: a model whose ranking survives can in principle
+be rescued by a threshold, one whose EER has itself collapsed cannot be.
 
 Requirements
-    pip install numpy pandas
-    paper/results/scores_raw.csv, and any of scores_cnn_bilstm.csv, scores_lora.csv.
+    pip install numpy pandas. Runs on the laptop in seconds, against scores_raw.csv and any of
+    scores_cnn_bilstm.csv, scores_lora.csv.
 """
 
 from pathlib import Path

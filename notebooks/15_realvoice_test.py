@@ -1,25 +1,21 @@
 """Score real phone recordings with the exported detectors, without the audio leaving the machine.
 
-Every number so far comes from two studio-grade read-speech corpora. The deployed model will be
-handed a phone, in a room, over a codec, by someone talking rather than reading. That is a
-recording condition neither head has heard, and the whole finding of this project is that an
-unfamiliar recording condition is what breaks a detector. So this is not a formality. It is the
-test most likely to disagree with everything reported so far.
+Every number so far comes from two studio-grade read-speech corpora. The deployed model gets a
+phone, in a room, over a codec, from someone talking rather than reading. That is a recording
+condition neither head has heard, and an unfamiliar recording condition is the whole finding of
+this project, so this is the test most likely to disagree with everything reported so far.
 
-It runs locally rather than on Kaggle on purpose. The clips are other people's voices, some of
-them about private things, and a private Kaggle dataset is still an upload to a third party.
-Nothing here writes audio anywhere. The only output is a CSV of scores.
+It runs locally on purpose. The clips are other people's voices and a private Kaggle dataset is
+still an upload to a third party. Nothing writes audio anywhere; the only output is a CSV.
 
-Scoring is byte-for-byte the path in app/api/service.py: the same bottleneck, the same
-per-window normalisation, the same pooling, the same aggregation. A disagreement between this
-file and the deployed service would mean one of them is wrong.
+Scoring is byte-for-byte the path in app/api/service.py. A disagreement between this file and
+the deployed service would mean one of them is wrong.
 
 Requirements
     Python 3.11 (onnxruntime has no 3.14 wheels).
     pip install onnxruntime soundfile soxr imageio-ffmpeg pandas numpy
     frontend_int8.onnx and heads.json from notebook 14, in MODEL_DIR.
-    Clips in CLIP_DIR named speaker_language_source_index_style.ext, for example
-    spk04_hinglish_phone_02_talk.m4a. Style is read or talk.
+    Clips in CLIP_DIR named speaker_language_source_index_style.ext, style read or talk.
 """
 
 import io

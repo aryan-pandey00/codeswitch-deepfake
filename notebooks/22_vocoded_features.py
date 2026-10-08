@@ -1,28 +1,20 @@
-"""Cache frozen XLS-R features for the vocoded set, both classes, in the same space as the existing cache.
+"""Cache frozen XLS-R features for the vocoded set, in the same space as the existing cache.
 
-Both classes are extracted, and the genuine one is the passthrough twins from 21b rather than the
-frozen real corpus: 21b measured a single scalar separating corpus from vocoded at AUC 0.61,
-because a vocoded file passes the 8 kHz bottleneck twice and the corpus once. Against the twins
-that falls to 0.54. Pairing on source_path therefore gives a fake and a genuine clip sharing
-utterance, speaker, session and processing history, differing only by the vocoder.
+The genuine class here is the passthrough twins from 21b rather than the frozen real corpus:
+21b measured a scalar separating corpus from vocoded at AUC 0.61, because a vocoded file passes
+the 8 kHz bottleneck twice and the corpus once. Against the twins that falls to 0.54, so
+pairing on source_path gives a fake and a genuine clip sharing utterance, speaker, session and
+processing history.
 
-Nothing can be trained on 21's audio until it has been through the same frontend and pooling as
-the 31,922 clips notebook 09 cached: any difference in checkpoint, sample rate, normalisation or
-masking would put these rows in a different space, and a head trained across both would fit the
-difference between two extractors rather than between real and fake. So the recipe is copied, not
-rewritten — facebook/wav2vec2-xls-r-300m, per utterance normalisation with an attention mask,
-mean and standard deviation over valid frames, accumulated in fp32 and stored as fp16.
-
-One thing differs deliberately: 09 stored all 25 hidden states because the layer was not chosen
-yet. Layer 20 is locked now, so only that is stored, and the cache is 143 MB instead of 3.5 GB.
+Any difference in checkpoint, sample rate, normalisation or masking would put these rows in a
+different space, and a head trained across both would fit the difference between two extractors
+rather than between real and fake. So the recipe is copied, not rewritten. One thing differs:
+09 stored all 25 hidden states because the layer was unchosen, layer 20 is locked now, and the
+cache is 143 MB instead of 3.5 GB.
 
 Requirements
-    Kaggle notebook, GPU T4. Internet: On for the checkpoint (~1.2 GB).
-    Attached inputs: the output of notebook 21 (vocoded), the output of 21b (passthrough),
-    and codeswitch-deepfake-feats for the fingerprint check.
-    Resumable. Re-attach the previous commit's output to continue a killed run.
-    Writes voc_layer20_fp16.npy and voc_index.csv.
-    Roughly 1.25x the clips of a fakes-only run, since each fake now carries its twin.
+    Kaggle notebook, GPU T4, internet on (~1.2 GB). Resumable.
+    Attached inputs: the output of 21, the output of 21b, and codeswitch-deepfake-feats.
 """
 
 # CELL 1: configuration and mounts
@@ -253,7 +245,7 @@ else:
     new = np.asarray(feats[done][:400], dtype=np.float32)
 
     print(f"old real rows: mean {old_real.mean():+.4f}, sd {old_real.std():.4f}")
-    print(f"new vocoded  : mean {new.mean():+.4f}, sd {new.std():.4f}")
+    print(f"new vocoded: mean {new.mean():+.4f}, sd {new.std():.4f}")
     print("\nThese are different classes so the numbers should not match, but an order of "
           "magnitude apart would mean the extractor differs rather than the audio.")
 

@@ -1,25 +1,19 @@
 """Cache frozen XLS-R features for every real and fake utterance.
 
-Every experiment in weeks 3 to 5 reads this cache instead of running the frontend, so the cost
-is paid once. The frontend is frozen throughout, which is what makes a cache valid at all.
+Every later experiment reads this cache instead of running the frontend, so the cost is paid
+once. The frontend is frozen throughout, which is what makes a cache valid at all.
 
-Frame-level features are not storable here: 31,922 utterances at 50 fps and 1024 dimensions is
-roughly 16 GB in fp16, past the working disk. What is stored instead is the mean and standard
-deviation over time of every one of the 25 hidden states. Pooling loses temporal detail, but
-keeping all layers keeps the one choice that matters open, spoofing artifacts in a
-self-supervised model are not concentrated in the final layer, and a sweep over layers on the
-dev split costs nothing once this file exists, whereas testing one more layer by re-extracting
-costs the entire pass again.
-
-The cache serves the baseline, the go/no-go evaluation and the condition grids. Adapting
-the frontend itself reads audio rather than this file and is unaffected by the pooling.
+Frame-level features are not storable: 31,922 utterances at 50 fps and 1024 dimensions is
+roughly 16 GB in fp16. Stored instead is the mean and standard deviation over time of all 25
+hidden states. Pooling loses temporal detail but keeping every layer keeps the choice that
+matters open, since spoofing artifacts are not concentrated in the final layer and a later
+layer sweep then costs nothing.
 
 Requirements
-    Kaggle notebook, GPU T4. Internet: On for the checkpoint (~1.2 GB).
+    Kaggle notebook, GPU T4. Internet on for the checkpoint (~1.2 GB).
     Attached inputs: codeswitch-deepfake-real and codeswitch-deepfake-fakes.
-    Output is about 3 GB, so commit rather than running interactively.
-    To resume a killed run, attach the previous commit's output as a third input; the `feats`
-    directory is found the same way the fakes directory is.
+    Output is about 3 GB, so commit rather than running interactively. To resume a killed run,
+    attach the previous commit's output; `feats` is found the way the fakes directory is.
 """
 
 # CELL 1: configuration and mounts

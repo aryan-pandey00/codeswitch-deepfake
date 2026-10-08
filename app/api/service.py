@@ -181,15 +181,11 @@ class Detector:
         for name, head in self.heads.items():
             z = np.array([float(((f - head["mu"]) / head["sd"] * head["w"]).sum() + head["b"])
                           for f in feats])
-            # Averaged before the sigmoid, not after. One saturated window would otherwise pull
-            # a mean of numbers already squashed into zero and one further than its evidence
-            # deserves.
-            # The margin travels alongside the squashed score. A logistic head this well
-            # separated in domain drives |z| past 6 routinely, and sigmoid(-6) already rounds
-            # to a confidence of 100%, so the score alone cannot distinguish a comfortable
-            # call from an overwhelming one. Out of corpus the calibration is wrong anyway,
-            # which is the whole finding, so the interface reports distance from the boundary
-            # rather than a probability it cannot honestly claim.
+            # Averaged before the sigmoid, not after: one saturated window would otherwise
+            # pull a mean of already-squashed numbers further than its evidence deserves.
+            # The margin travels alongside it because sigmoid(-6) already rounds to 100%, so
+            # the score alone cannot tell a comfortable call from an overwhelming one, and out
+            # of corpus the calibration is wrong anyway.
             out[name] = {"score": sigmoid(z.mean()),
                          "margin": float(z.mean()),
                          "windows": [sigmoid(v) for v in z]}

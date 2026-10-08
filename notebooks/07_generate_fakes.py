@@ -1,32 +1,19 @@
 """Generate the synthetic half of the dataset with two attack systems.
 
-Every real utterance gets one fake. Half are cloned with XTTS-v2, half converted with FreeVC,
-so the training condition contains two generator architectures rather than one. That matters
-for the central comparison: if the Hindi-trained detector is later evaluated on Hinglish
-produced by the *same* two generators, a collapse cannot be explained away as generator
-novelty. Attack generalisation is measured separately, against a third system held out
-entirely.
+Every real utterance gets one fake, half cloned with XTTS-v2 and half converted with FreeVC, so
+the training condition holds two generator architectures. A later collapse on Hinglish produced
+by the same two generators then cannot be explained as generator novelty.
 
-Two matching rules make the classes separable only by synthesis:
+Two matching rules keep the classes separable only by synthesis. Speakers are matched within
+condition, since a Hinglish fake voiced by a monolingual train speaker would be an identity in
+no real file. And every file passes native -> 8 kHz -> 16 kHz before writing: real audio holds
+nothing above 4 kHz where generators emit 24 kHz, a gap measured at 2.3 million on one clip.
 
-    Speakers are matched within condition. The code-switched sets carry role="test_source"
-    because training is monolingual, so a Hinglish fake voiced by a monolingual train speaker
-    would be an identity that appears in no real file in that condition.
-
-    Every generated file passes through native -> 8 kHz -> 16 kHz before it is written. The
-    real audio was frozen through that path and holds no energy above 4 kHz; generators emit
-    24 kHz. Measured on one clip, the gap before the bottleneck was a factor of 2.3 million,
-    which is a perfect classifier having nothing to do with deepfakes.
-
-Bengali is FreeVC-only, since XTTS has no `bn`. Comparisons involving Bengali are therefore
-restricted to the FreeVC subset.
+Bengali is FreeVC-only, since XTTS has no `bn`.
 
 Requirements
-    Kaggle notebook, GPU T4. Internet: On (~2.5 GB of checkpoints across both systems).
-    Attached input: the frozen real-audio dataset.
-    Roughly 7 GPU-hours for the full run at the measured speeds, so the two generation cells
-    are written to run and commit independently, each well inside the session cap.
-    Set LIMIT to a small integer for a smoke run before committing either pass.
+    Kaggle notebook, GPU T4, internet on (~2.5 GB). Attached input: the real dataset.
+    Roughly 7 GPU-hours, so the two generation cells commit independently. Set LIMIT first.
 """
 
 # CELL 1: configuration and environment
@@ -157,9 +144,9 @@ plan.to_csv(PLAN_CSV, index=False)
 print(plan.groupby(["set", "split", "attack"]).size().rename("fakes").to_string())
 mean_dur = float(MAN.dur.mean())
 print(f"\n{len(plan):,} fakes planned, 1 per real")
-print(f"xtts {int((plan.attack=='xtts').sum()):,} at RTF 0.60 ≈ "
+print(f"xtts {int((plan.attack=='xtts').sum()):,} at RTF 0.60, about "
       f"{(plan.attack=='xtts').sum()*mean_dur*0.60/3600:.1f} GPU-h")
-print(f"freevc {int((plan.attack=='freevc').sum()):,} at RTF 0.43 ≈ "
+print(f"freevc {int((plan.attack=='freevc').sum()):,} at RTF 0.43, about "
       f"{(plan.attack=='freevc').sum()*mean_dur*0.43/3600:.1f} GPU-h")
 
 

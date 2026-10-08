@@ -1,27 +1,18 @@
 """Train the monolingual Hindi baseline and run the code-switching go/no-go.
 
-The question is whether a detector trained only on monolingual Hindi transfers to Hinglish.
-The answer is the gap between two numbers: EER on held-out monolingual Hindi, and EER on
-Hindi-English code-switched speech from speakers the model never saw. The second number that
-matters just as much is the false-positive rate on *genuine* code-switched speech at a
-threshold calibrated the way a deployment would calibrate it, on the monolingual data that
-was available at training time.
+The question is whether a detector trained only on monolingual Hindi transfers to Hinglish. The
+answer is the gap between EER on held-out monolingual Hindi and EER on code-switched speech
+from unseen speakers. The number that matters as much is the false-positive rate on genuine
+code-switched speech, at a threshold calibrated the way a deployment would calibrate it.
 
-A control runs first, because the in-domain baseline reached 0% EER on dev during feature
-extraction and a perfect classifier deserves suspicion before it deserves belief. The reals
-were bandlimited to 4 kHz by the dataset freeze and both generators were pushed through the
-same path, but the dataset card records the fakes still sitting 4x to 8x below the reals above
-4 kHz. A handful of hand-computed scalars (band ratio, level, duration, spectral shape) are
-fitted to the same task. If those alone separate the classes, the classifier is reading the
-channel rather than the synthesis, and every downstream number is about bandwidth.
-
-Everything here reads the cached features from notebook 09. Nothing trains a frontend, so this
-runs on CPU and costs no GPU quota.
+A control runs first, because the in-domain baseline reached 0% EER and a perfect classifier
+deserves suspicion before belief. Hand-computed scalars (band ratio, level, duration, spectral
+shape) are fitted to the same task. If those alone separate the classes, the classifier is
+reading the channel and every downstream number is about bandwidth.
 
 Requirements
-    Kaggle notebook, CPU. Internet: not needed.
-    Attached inputs: codeswitch-deepfake-feats, and the real and fake audio datasets for the
-    control in cell 3.
+    Kaggle notebook, CPU. Attached inputs: codeswitch-deepfake-feats, plus the real and fake
+    audio datasets for the control in cell 3.
 """
 
 # CELL 1: load the cache

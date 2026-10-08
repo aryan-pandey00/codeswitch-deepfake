@@ -1,33 +1,21 @@
 """Fine-tune XLS-R with LoRA adapters, to separate the frozen frontend from the finding.
 
-The linear probe leaves the frontend untouched, which is what makes its result clean: nothing
-changes between the baseline and the fixed head except the training data. It also leaves an
-opening. A frozen representation cannot adapt to a new recording condition, so a reader can
-reasonably ask whether the collapse is simply the cost of freezing, and whether letting the
-encoder move would dissolve it.
+The linear probe leaves the frontend untouched, which is what makes its result clean and also
+leaves an opening: a frozen representation cannot adapt to a new recording condition, so a
+reader can ask whether the collapse is the cost of freezing. This lets the encoder move.
+Adapters go into the query and value projections of every retained block, roughly 657,000
+trainable parameters out of 315 million, on the same splits with the same speakers held out.
 
-This answers that by letting the encoder move. Low-rank adapters are inserted into the query
-and value projections of every retained transformer block and trained jointly with the
-classifier head, on the same splits, with the same speakers held out. Roughly 657,000
-parameters are trainable out of 315 million, so the representation genuinely adapts while the
-pretrained weights stay intact.
+They are implemented here rather than pulled from a library: about twenty lines, no three-way
+version dependency in a notebook that runs unattended, and the method section can state what
+was adapted instead of naming a package.
 
-The adapters are implemented here rather than pulled from a library. It is about twenty lines,
-it removes a three-way version dependency from a notebook that has to run unattended as a
-commit, and it means the method section can state exactly what was adapted instead of naming a
-package.
-
-Evaluation protocol, stated because it differs slightly from the probe. Every clip is scored on
-a centred five-second span, which is what the deployed service windows and what the CNN-BiLSTM
-comparison uses. The cached linear-probe numbers pooled whole utterances instead. Utterances
-here average 4.7 s so the two coincide for most of the set, but the architecture comparison
-re-scores everything under one protocol rather than relying on that.
+Every clip is scored on a centred five-second span, which is what the service windows, where
+the cached probe numbers pooled whole utterances. Utterances average 4.7 s so they mostly agree.
 
 Requirements
-    Kaggle notebook, GPU T4. Roughly 1.5 hours, budget 2 GPU-hours.
-    Attached inputs: codeswitch-deepfake-feats (for index.csv only),
-    codeswitch-deepfake-real, codeswitch-deepfake-fakes.
-    Download curves_lora.csv, metrics_lora.csv and scores_lora.csv into paper/results/.
+    Kaggle notebook, GPU T4, roughly 1.5 hours.
+    Attached inputs: codeswitch-deepfake-feats (index.csv only), -real, -fakes.
 """
 
 # CELL 1: configuration, mounts, and the split definition

@@ -1,28 +1,19 @@
 """Measure whether the vocoded fakes are separable by processing alone, and close it if they are.
 
-Cell 6 of 21 found every vocoder sitting three to eight times below the real side on energy above
+Cell 6 of 21 found every vocoder three to eight times below the real side on energy above
 4 kHz, in the same direction for all four. A shared offset across unlike paths is the pipeline,
-not the vocoders: the real corpus passed the 8 kHz bottleneck once when it was frozen, and a
-vocoded file passes it again after resynthesis. That band is above the bottleneck's Nyquist, so it
-holds resampler leakage and nothing else, and a second pass attenuates it further.
+not the vocoders: the real corpus passed the 8 kHz bottleneck once, a vocoded file passes it
+again after resynthesis, and that band holds resampler leakage and nothing else.
 
-Ten clips cannot tell that from noise, so this measures more of them and asks the question medians
-cannot: is one scalar enough to separate the classes. Each source is compared against its own
-vocoded versions, the same pairing the training set relies on. Three scalars, because if the
-difference is confined to the suspect band rather than broad, that changes what has to be fixed.
-
-    Measured 21 Sep: band ratio 0.61 pooled, energy and centroid at chance.
-
-0.61 is weak, and cells 5 and 6 close it anyway: the held-out path carries the most of it, a weak
-scalar that correlates with the label is still one a model may use, and the fix costs a resample
-pass. The fakes are not altered. The genuine class is given the same processing history instead —
-the same sources through the identical bottleneck and peak limiter — so resynthesis is the only
-difference left between a fake and its twin. The frozen real corpus is untouched.
+Ten clips cannot tell that from noise, so this asks what medians cannot: is one scalar enough
+to separate the classes. Measured 21 Sep, band ratio 0.61 pooled, energy and centroid at
+chance. 0.61 is weak and cells 5 and 6 close it anyway, since a weak scalar correlating with
+the label is still one a model may use. The fakes are not altered; the genuine class is given
+the same processing history instead, so resynthesis is the only difference left.
 
 Requirements
-    Kaggle notebook, CPU, no internet, roughly fifteen minutes.
+    Kaggle notebook, CPU, no internet, roughly fifteen minutes. Resumable.
     Attached inputs: codeswitch-deepfake-real, codeswitch-deepfake-vocoded.
-    Resumable. Re-attach the previous commit's output to continue a killed run.
     Cells 1-4 read only. Cells 5-6 write passthrough/*.flac and manifest_passthrough.csv.
 """
 
@@ -57,7 +48,8 @@ MANIFEST = f"{WORK}/manifest_passthrough.csv"
 TARGET_SR = 16000
 BOTTLENECK_HZ = 8000
 SEED = 1337
-N_SOURCES = 300  # sources, not files; each contributes one real and one row per vocoder
+# Sources, not files: each contributes one real and one row per vocoder.
+N_SOURCES = 300
 
 os.makedirs(OUT, exist_ok=True)
 
@@ -187,7 +179,7 @@ if NEEDS_FIX:
     med = D.groupby("vocoder").band_ratio.median()
     print("\nband ratio against real, per path")
     for voc in sorted(v for v in med.index if v != "genuine"):
-        print(f"  {voc}: {med[voc] / med['genuine']:.2f}x")
+        print(f" {voc}: {med[voc] / med['genuine']:.2f}x")
     print("All on the same side of 1.0 is the pipeline. Spread across it is the vocoders.")
 
 
@@ -281,7 +273,7 @@ if NEEDS_FIX and len(PASS):
 
     print("\npooled, before and after")
     for f in FEATURES:
-        print(f"  {f}: {BEFORE.loc['ALL', f]:.3f} -> {AFTER.loc['ALL', f]:.3f}")
+        print(f" {f}: {BEFORE.loc['ALL', f]:.3f} -> {AFTER.loc['ALL', f]:.3f}")
 
     pooled = AFTER.loc["ALL"].max()
     print(f"\nworst pooled AUC: {worst:.3f} -> {pooled:.3f}")

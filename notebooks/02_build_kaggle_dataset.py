@@ -1,25 +1,17 @@
 """Build the real-audio dataset once and publish it as a reusable Kaggle Dataset.
 
-/kaggle/working and /kaggle/temp are wiped when a session ends, so every session that
-started from the raw corpora meant re-downloading roughly 7 GB and re-running the whole
-parse. This does that work one final time, download, parse, split, cut the audio
-segments, resample, and writes the result as a private Kaggle Dataset that mounts
-read-only in about ten seconds and never has to be rebuilt.
+/kaggle/working is wiped between sessions, so starting from the raw corpora meant
+re-downloading 7 GB every time. This does it once and writes a private Dataset that mounts
+read-only. It replaces the five acquisition scripts in superseded/ and must run top to bottom
+in a fresh container.
 
-Self-contained, and it replaces the five earlier acquisition scripts now in
-notebooks/superseded/. It has to run top to bottom in a fresh container, which is how
-Save & Run All executes it, so nothing here may depend on a previous session.
-
-Every file is resampled native -> 8 kHz -> 16 kHz deliberately. The monolingual sets are
-natively 8 kHz and the code-switched sets 16 kHz, and that split falls exactly on the
-train/test boundary, so without the bottleneck any later result would be attributable to
-bandwidth rather than to the corpus.
+Resampling is native -> 8 kHz -> 16 kHz deliberately. The monolingual sets are natively 8 kHz
+and the code-switched 16 kHz, a split falling exactly on the train/test boundary, so without
+the bottleneck any later result would be attributable to bandwidth.
 
 Requirements
-    Kaggle notebook. Accelerator None, this job is IO-bound and a GPU only burns quota.
-    Internet on, to download from OpenSLR. Persistence is not relied on.
-    Runtime 45-75 min, almost all of it download and extract.
-    Produces ~14,000 FLAC files, roughly 1.0-1.6 GB, plus manifest_real.csv.
+    Kaggle notebook, no accelerator, internet on. 45-75 min, mostly download.
+    Produces ~14,000 FLAC and manifest_real.csv.
 """
 
 
@@ -86,7 +78,7 @@ def pick(res, *musts):
     raise SystemExit(f"no SLR{res} tarball matching {musts}, see listing above")
 
 
-# name -> (openslr resource, tarball). The official TEST partitions of the code-switched
+# name -> (openslr resource, tarball). The official test partitions of the code-switched
 # sets are the right choice here: the train partitions run ~90 h / 30 GB, and the test
 # partitions already supply enough utterances per intensity bin.
 # hindi_mono_train is the training source; hindi_mono is the in-domain control
@@ -145,11 +137,10 @@ print(f"\n/kaggle/temp free: {free/2**30:.1f} GB")
 
 # CELL 4: build the manifest (corrected parser)
 # Two layouts to handle:
-#  * Kaldi segmented (the code-switched sets): wav.scp + segments + utt2spk,
-#    several utterances cut out of one long recording.
-#  * Flat (the monolingual Hindi sets): one wav per utterance, id is
-#    <prompt>_<speaker>, so the speaker is the SUFFIX. Reading it as the prefix reports
-#    386 speakers, which is the prompt count; the real speaker count is 19.
+# Kaldi segmented (the code-switched sets): wav.scp, segments and utt2spk, several
+# utterances cut from one long recording. Flat (the monolingual Hindi sets): one wav per
+# utterance, id <prompt>_<speaker>, so the speaker is the suffix. Reading it as the prefix
+# reports 386 speakers, which is the prompt count against a real count of 19.
 import glob
 
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
@@ -391,11 +382,9 @@ print(f"\nTOTAL utterances to render: {len(FINAL):,}")
 
 
 # CELL 7: cut, bottleneck-resample, write FLAC
-# Sample-rate confound: the monolingual sets are 8 kHz, the code-switched sets
-# are 16 kHz. Fed straight into a model, any "collapse" measured across them
-# could just be bandwidth. So EVERY file goes native -> 8 kHz -> 16 kHz. The
-# 8 kHz stage is a real lowpass, so all four corpora end up with identical
-# bandwidth, and 16 kHz is what wav2vec2 expects.
+# Sample-rate confound: the monolingual sets are 8 kHz and the code-switched 16 kHz, so any
+# collapse measured across them could just be bandwidth. Every file goes native -> 8 kHz ->
+# 16 kHz; the 8 kHz stage is a real lowpass and 16 kHz is what wav2vec2 expects.
 from concurrent.futures import ThreadPoolExecutor
 
 SR_OUT, MIN_DUR, MAX_DUR = 16000, 1.0, 20.0
@@ -454,7 +443,7 @@ with ThreadPoolExecutor(max_workers=8) as ex:
         done += 1
         if done % 1000 == 0 or done == len(records):
             rate = done / max(time.time() - t0, 1e-9)
-            print(f"{done:,}/{len(records):,} {rate:.1f} utt/s  "
+            print(f"{done:,}/{len(records):,} {rate:.1f} utt/s, "
                   f"eta {(len(records)-done)/max(rate,1e-9)/60:.1f} min", flush=True)
 
 REND = pd.DataFrame(results, columns=["fname", "dur", "src_sr", "status"])

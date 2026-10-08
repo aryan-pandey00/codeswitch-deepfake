@@ -1,33 +1,20 @@
 """Run a published anti-spoofing model on this data without training it.
 
-The three detectors compared so far were all trained here, on one corpus, by one person.
-That isolates the variable and leaves one thing untested: whether a model built by other
-people, on other data, to a different objective behaves the same way. A reader who suspects
-the training setup rather than the data is answered only by a model that had nothing to do
-with it.
+The three detectors compared so far were all trained here, on one corpus, by one person. A
+reader who suspects the training setup rather than the data is answered only by a model that
+had nothing to do with it. AASIST is graph attention over raw waveform, 297k parameters,
+released with weights trained on ASVspoof2019 LA. It runs as released, and only the threshold
+is fitted on in-domain dev.
 
-AASIST is that model. Graph attention over raw waveform, 297k parameters, released with
-weights its authors trained on ASVspoof2019 LA, state of the art on that benchmark. It runs
-exactly as released. Only the decision threshold is fitted, on in-domain dev, which is the
-protocol every other model here was given.
-
-Two limits have to be stated plainly. AASIST has seen neither this corpus nor its bandwidth,
-since every file here is bandlimited at 4 kHz where ASVspoof2019 is full-band, so a poor
-result cannot be pinned on the Indian corpus specifically. The honest claim is narrower and still
-useful: a published detector meeting unfamiliar recording conditions shows the same error
-asymmetry. It may also just miss attacks that postdate its training by years, which is a
-different failure and worth reporting as one.
-
-It also consumes raw amplitude with no per-utterance normalisation, which XLS-R applies and
-which made absolute level structurally invisible to every other model here. Generated files
-sit systematically louder than real ones, so level is a live confound for this model alone.
-Both protocols are scored, released and peak-normalised; a wide gap means the model is
-reading level rather than synthesis.
+Two limits stated plainly. AASIST has seen neither this corpus nor its bandwidth, since every
+file here is bandlimited at 4 kHz where ASVspoof2019 is full-band, so a poor result cannot be
+pinned on the Indian corpus specifically, and it may simply miss attacks postdating its
+training. It also consumes raw amplitude with no per-utterance normalisation, which made level
+invisible to every other model here, so both released and peak-normalised protocols are scored.
 
 Requirements
-    Kaggle notebook, GPU optional, internet on for the repository clone. Under 15 minutes.
+    Kaggle notebook, GPU optional, internet on for the clone. Under 15 minutes.
     Attached inputs: codeswitch-deepfake-feats, -real, -fakes.
-    Download metrics_aasist.csv and scores_aasist.csv into paper/results/.
 """
 
 # CELL 1: configuration, mounts, and the split definition

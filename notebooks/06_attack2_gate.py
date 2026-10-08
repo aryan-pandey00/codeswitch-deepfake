@@ -1,30 +1,17 @@
 """Decide the second attack system by ear, and verify fakes match the real audio's band.
 
-A detector trained against a single generator learns that generator. The second attack
-therefore has to differ from XTTS-v2 by architecture rather than by weights. The candidate
-here is FreeVC, a VITS-family voice conversion model: flow-based posterior encoder and a
-HiFi-GAN decoder driven by WavLM content features, with no autoregressive token stage at
-all. Being text-free it is also language-agnostic, so the same pipeline covers Bengali,
-which XTTS cannot speak.
+A detector trained against one generator learns that generator, so the second attack has to
+differ by architecture rather than weights. FreeVC is VITS-family voice conversion: flow-based
+posterior encoder, HiFi-GAN decoder on WavLM content features, no autoregressive token stage.
+Being text-free it is language-agnostic, so it covers Bengali too, and the fake inherits the
+source recording's prosody and channel, so it cannot carry the text-frontend artifacts a TTS
+system introduces. The XTTS gate spelled `ok` out letter by letter.
 
-Voice conversion has a second property worth the switch. The fake inherits the source
-recording's prosody, channel and switch points, so it cannot carry the text-frontend
-artifacts that a TTS system introduces, the XTTS gate spelled `ok` out letter by letter,
-which a detector could learn instead of learning deepfake detection.
-
-The last cell checks a confound that applies to every attack system, not only this one.
-The frozen real audio passed through native -> 8 kHz -> 16 kHz, so it holds no energy above
-4 kHz. Generators emit 24 kHz. A fake that keeps its full band is separable from every real
-file on bandwidth alone, which would make any result in this project uninterpretable.
-
-A single-speaker VITS system, MMS-TTS Hindi, is also probed cheaply at the end as a
-candidate for the held-out third attack. It needs no cloning and no new dependency.
+The last cell checks the bandwidth confound: real audio holds nothing above 4 kHz, generators
+emit 24 kHz, so a fake keeping its full band is separable on bandwidth alone.
 
 Requirements
-    Kaggle notebook, GPU T4 (the conversion speed measured here sets the generation budget).
-    Internet: On, for FreeVC and its WavLM content encoder (~1.5 GB together).
-    Attached input: the frozen real-audio dataset.
-    Stop the session when finished; quota bills by session time with a GPU attached.
+    Kaggle notebook, GPU T4, internet on (~1.5 GB). Attached input: the real dataset.
 """
 
 # CELL 1: environment

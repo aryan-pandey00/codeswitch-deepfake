@@ -1,27 +1,20 @@
 """Close the two gaps the feature cache's own checks left open.
 
-Notebook 09 verified that pooled features match unbatched extraction, which establishes row
-alignment and rules out an active SpecAugment mask. It does not establish that the attention
-mask is applied, because 09 batches in duration order: every batch holds near-identical
-lengths, so there is only one or two percent padding for a broken mask to corrupt, and the
-resulting error would sit close to fp16 noise. The test lacked the power its number implied.
+Notebook 09 verified pooled features against unbatched extraction, which establishes row
+alignment but not that the attention mask is applied: 09 batches in duration order, so a broken
+mask has one or two percent padding to corrupt and the error would sit near fp16 noise.
 
-The decisive version pads deliberately. A short utterance is extracted alone and again in a
-batch with the longest file in the dataset, so padding dominates the batch. With a correct
-mask the two are identical to floating-point precision; without one, the pooled mean is
-diluted towards zero in proportion to the padding, which is now most of the tensor. Both
-sides are computed fresh on CPU, so the comparison tests the pooling logic rather than the
-numerics of the device the cache happened to be built on.
+The decisive version pads deliberately. A short utterance is extracted alone and again batched
+with the longest file in the dataset. With a correct mask the two match to floating-point
+precision; without one the pooled mean is diluted towards zero. Both sides run on CPU, so this
+tests the pooling logic rather than the device the cache was built on.
 
-The second gap is that the feature extractor validates the sample rate it is handed rather
-than resampling to it. A file at another rate would be read as though it were 16 kHz and
-produce plausible, wrong features without raising. Both writers hardcode 16 kHz, so this
-confirms a construction guarantee rather than investigating a suspicion.
+The second gap: the extractor validates the sample rate it is handed rather than resampling to
+it, so a file at another rate would produce plausible, wrong features silently.
 
 Requirements
-    Kaggle notebook, CPU. Internet: On for the checkpoint.
+    Kaggle notebook, CPU, internet on for the checkpoint.
     Attached inputs: codeswitch-deepfake-feats, and the real and fake audio datasets.
-    A few minutes. No GPU quota.
 """
 
 # CELL 1: mounts

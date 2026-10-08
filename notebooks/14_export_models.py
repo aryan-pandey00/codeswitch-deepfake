@@ -1,26 +1,18 @@
 """Export the two detectors as artifacts the API can serve, and measure what the export cost.
 
-Everything measured so far was measured on the cached features: fp16 statistics pooled from a
-GPU forward pass over audio that was already 16 kHz mono. The deployed service has none of
-that. It gets a browser upload, resamples it, runs an int8 ONNX graph on one CPU thread, and
-dots the result with a stored weight vector. Four things change along that path, and each one
-can move a score across the decision boundary.
+Everything so far was measured on cached fp16 features from a GPU pass over 16 kHz mono audio.
+The deployed service gets a browser upload, resamples it, runs an int8 ONNX graph on one CPU
+thread, and dots the result with a stored weight vector. Four things change along that path and
+each can move a score across the boundary, so this reproduces the path exactly and reports the
+same numbers the cached evaluation did.
 
-So this file does not just write files. It reproduces the deployment path exactly, scores real
-audio through it, and reports the same numbers the cached evaluation reported, so the drop
-from quantisation and the drop from the runtime are both visible before anything is uploaded.
-
-Two heads are exported. The baseline is trained on one corpus and is the exhibit. The fixed
-head adds a handful of speakers per code-switched corpus and is the product. Both are trained
-with those speakers held out of every number printed here, so the reported performance
-describes the exact weights being shipped rather than a sibling of them.
+Two heads are exported: the baseline trained on one corpus, which is the exhibit, and the fixed
+head with a few speakers per code-switched corpus added, which is the product. Both hold those
+speakers out of every number printed here.
 
 Requirements
-    Kaggle notebook, CPU is enough and uses no GPU quota. Internet: On for the checkpoint and
-    for the onnx install in cell 1, which the image does not carry.
-    Attached inputs: codeswitch-deepfake-feats, codeswitch-deepfake-real,
-    codeswitch-deepfake-fakes.
-    Runtime is dominated by cells 5 and 6, roughly half an hour together.
+    Kaggle notebook, CPU. Internet on for the checkpoint and the onnx install in cell 1.
+    Attached inputs: codeswitch-deepfake-feats, -real, -fakes. Cells 5 and 6 dominate runtime.
 """
 
 # CELL 1: configuration and mounts

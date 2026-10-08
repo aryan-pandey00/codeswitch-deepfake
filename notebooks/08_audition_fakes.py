@@ -1,24 +1,17 @@
 """Decide whether XTTS kept the English in the code-switched transcripts.
 
-Generation left one signal unresolved. XTTS fakes whose transcript contains a short Latin token
-run about 15% shorter than the real file they pair with, while the rest run 10% longer. Two
-explanations fit. Either XTTS is thinning or dropping English words in `hi` mode, in which case
-those fakes are monolingual Hindi wearing a code-switched label and the Hinglish condition
-quietly loses one of its two attacks. Or utterances containing short English words are simply
-shorter to begin with, and the split is an artifact of how they were grouped.
+XTTS fakes whose transcript contains a short Latin token run about 15% shorter than the real
+file they pair with, while the rest run 10% longer. Either XTTS is dropping English words in
+`hi` mode, in which case those fakes are monolingual Hindi wearing a code-switched label, or
+utterances with short English words are simply shorter to begin with.
 
-The two are separable before anyone listens. If English is being dropped, the shortfall should
-deepen as the Latin-script share of the transcript rises, because the missing words are missing
-time. If the grouping is at fault, the shortfall should be flat across that share. The first
-cells measure it; the audition cells then confirm by ear, which is the only way to tell a
-dropped word from a rushed one.
-
-FreeVC runs through the same measurement as a reference. It converts the real recording
-directly and cannot alter content, so its curve is what an unaffected system looks like.
+The two are separable before anyone listens. If English is being dropped the shortfall should
+deepen as the Latin-script share rises; if the grouping is at fault it should be flat. The
+audition cells then confirm by ear, which is the only way to tell a dropped word from a rushed
+one. FreeVC runs through the same measurement as a reference, since it cannot alter content.
 
 Requirements
-    Kaggle notebook, CPU. No GPU quota is needed.
-    Attached inputs: the frozen real-audio dataset, and the generation notebook's output.
+    Kaggle notebook, CPU. Attached inputs: the real dataset and the generation output.
 """
 
 # CELL 1: locate the two inputs and load the fake manifest

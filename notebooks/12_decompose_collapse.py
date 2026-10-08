@@ -2,26 +2,17 @@
 
 Notebook 10 measured a Hindi-trained detector going from 0% EER on monolingual Hindi to 6.69%
 on Hindi-English, rejecting 32% of genuine code-switched speech. The magnitude is not in
-question. The cause is, and four readings of that notebook's own output argue against
-code-switching:
+question, the cause is, and four readings of that notebook's own output argue against
+code-switching: rejection is flat across intensity bins and worst in the lowest; the regression
+on switch rate is null and negatively signed; Bengali-English degrades six times less despite
+being more code-switched; and 23 of 25 layers sat at exactly 0.00% dev EER, so the layer behind
+the 6.69% was a tie-break on fourth-decimal noise while layer 20 gives 2.37%.
 
-    rejection is flat across intensity bins, and worst in the lowest one;
-    the regression on switch rate is null and negatively signed;
-    Bengali-English, more code-switched than Hindi-English and further from the training
-    language, degrades six times less;
-    and the layer sweep puts 23 of 25 layers at exactly 0.00% dev EER, so the layer that
-    produced the 6.69% was chosen by a tie-break on fourth-decimal log-loss noise, while
-    layer 20 gives 2.37% on the same condition.
-
-The control that settles the first question was already in the dataset and went unreported.
-Both code-switched corpora contain genuine monolingual utterances, `cs_bin == "mono"`, recorded
-from the same speakers in the same sessions as their code-switched neighbours. Those differ
-from the training data in recording conditions but not in language mixing. A flat profile down
-to `mono` leaves nothing for switching to explain.
-
-Everything is computed at three layers rather than one: the convolutional output, the layer
-notebook 10 selected, and the layer that transfers best. A conclusion that holds at one depth
-and not another is a fact about depth, and reporting a single layer would hide it.
+The control was already in the dataset. Both code-switched corpora contain genuine monolingual
+utterances, `cs_bin == "mono"`, from the same speakers in the same sessions, differing in
+recording conditions but not in language mixing. A flat profile down to `mono` leaves nothing
+for switching to explain. Everything is computed at three layers, since a conclusion holding at
+one depth and not another is a fact about depth.
 
 Requirements
     Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats.

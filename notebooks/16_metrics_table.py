@@ -1,32 +1,18 @@
 """Compute the full metric set for both detectors across every evaluation condition.
 
 Everything reported so far has been equal error rate and the rate at which genuine speech is
-rejected. Those are the right metrics for this finding, but they are not the ones a reader
-looks for first, and no accuracy, precision, recall, F1 or AUC has been computed anywhere in
-this project. This file produces all of them, once, from the cached features, so that every
-later document quotes the same numbers rather than recomputing them.
+rejected. Those are the right metrics for this finding but not the ones a reader looks for
+first. This produces accuracy, precision, recall, F1 and AUC once, so every later document
+quotes the same numbers.
 
-Two things about the design are deliberate.
-
-The positive class is fake. Precision and recall therefore describe fake detection, and the
-two error rates are named rather than left to the reader: FAR is a fake accepted as genuine,
-FRR is genuine speech rejected as fake. This project is about the second one, which is the
-error that a threshold-free metric like EER averages away.
-
-Rates are reported with Wilson intervals. Several conditions here have zero errors out of a
-few hundred trials, and a bare 0.0% invites a stronger claim than the sample size supports.
-The interval is what makes "no false rejection observed" an honest sentence.
-
-Scores are written out alongside the metrics so the figures can be drawn later without
-rerunning anything, and so the paper and the report cannot end up drawing from different runs.
+The positive class is fake, so the two error rates are named rather than left to the reader:
+FAR is a fake accepted, FRR is genuine speech rejected. This project is about the second, which
+EER averages away. Rates carry Wilson intervals, because several conditions have zero errors
+out of a few hundred trials and a bare 0.0% invites a stronger claim than the sample supports.
 
 Requirements
-    Kaggle notebook, CPU only, no GPU quota. A few minutes.
-    Attached inputs: codeswitch-deepfake-feats. The audio datasets are not needed.
-    Optionally also attach the exported heads.json, which makes the numbers describe the
-    shipped artifact rather than a reproduction of it.
-    Download metrics_main.csv, confusion_main.csv, scores_raw.csv and metrics_by_speaker.csv
-    from the working directory into paper/results/.
+    Kaggle notebook, CPU. Attached input: codeswitch-deepfake-feats. Optionally the exported
+    heads.json, which makes the numbers describe the shipped artifact rather than a copy.
 """
 
 # CELL 1: configuration and the feature cache

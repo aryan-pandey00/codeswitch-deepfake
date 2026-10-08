@@ -1,20 +1,15 @@
-"""Decide how every fake in this project gets generated, by testing one thing.
+"""Decide how every fake gets generated, by testing one thing.
 
-The question is whether XTTS-v2 can speak a single sentence containing both Devanagari
-and Latin script and pronounce the English words as English.
+Whether XTTS-v2 can speak a sentence containing both Devanagari and Latin script and pronounce
+the English as English. If it can, the Hindi and Hinglish fakes come from XTTS cloning. If not,
+everything moves to voice conversion, which is language-agnostic and so also covers Bengali,
+and is a recognised ASVspoof attack category. Either answer works.
 
-If it can, the Hindi and Hinglish fakes come from XTTS speaker cloning. If it cannot,
-everything moves to voice conversion, which is not a setback, since VC is
-language-agnostic and so also covers Bengali, which XTTS does not support at all, and it
-is a recognised ASVspoof attack category. Either answer is workable. This is a fork
-rather than a risk: nothing downstream is blocked by the outcome, only by not knowing it.
-
-Synthesis speed is measured here too, since that sets the GPU budget for generation.
+Synthesis speed is measured here too, since it sets the GPU budget for generation.
 
 Requirements
-    Kaggle notebook, GPU T4 x2, internet on for the ~1.8 GB model download.
-    Attached input: codeswitch-deepfake-real.
-    Runtime ~15 min, most of it the download.
+    Kaggle notebook, GPU T4, internet on for the ~1.8 GB download.
+    Attached input: codeswitch-deepfake-real. Runtime ~15 min, mostly the download.
 """
 
 
@@ -65,7 +60,7 @@ print(f"bengali 'bn' supported: {'bn' in langs} (expected False)")
 # CELL 3: build a reference clip from a real MUCS speaker
 # XTTS clones from 6+ seconds of reference audio and these utterances average ~3.3 s, so
 # several clips from one speaker are concatenated. The speaker is taken from
-# the TRAIN split. The fakes have to come from the same voices as the reals,
+# the train split. The fakes have to come from the same voices as the reals,
 # otherwise the detector could separate them on speaker identity alone.
 import pandas as pd, numpy as np, soundfile as sf, soxr
 
@@ -100,7 +95,7 @@ print("\nreference voice, for comparison against the clone:")
 ipd.display(ipd.Audio(REF))
 
 
-# CELL 4: THE GATE
+# CELL 4: the gate
 # Three real transcripts straight out of the corpus, not invented examples.
 mono_txt = (MAN[(MAN.set == "hindi_mono_train") & (MAN.n_words.between(8, 16))]
               .transcript.iloc[0])

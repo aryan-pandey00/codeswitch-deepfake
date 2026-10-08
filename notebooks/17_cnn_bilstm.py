@@ -1,31 +1,18 @@
 """Retrain an MFCC CNN-BiLSTM on these splits, to test whether the collapse is ours.
 
 The finding so far rests on one architecture, a frozen self-supervised transformer with a
-linear head. That is a single point of evidence and the obvious reply is that a different
-model would not have the problem. It has to be answered with a model, not an argument.
+linear head, and the obvious reply is that a different model would not have the problem. That
+has to be answered with a model. CNN-BiLSTM over MFCCs shares no component with XLS-R and
+learns its own filters rather than inheriting a representation from 436,000 hours.
 
-CNN-BiLSTM over MFCCs is the right first answer: the architecture most published audio
-deepfake detectors used before self-supervised frontends arrived, sharing no component with
-XLS-R, learning its own filters from the spectrogram rather than inheriting a representation
-from 436,000 hours of pretraining. If the channel effect were an artifact of that
-pretraining, this model would not show it.
-
-Both heads are trained exactly as in the linear-probe experiment, a baseline on one corpus,
-and a fixed head with eight speakers per code-switched corpus added, those speakers excluded
-from every reported number so the two columns stay comparable.
-
-Two design choices avoid shortcuts rather than chase accuracy. Inputs are a fixed five-second
-span at a ten-millisecond hop, giving the (40, 500, 1) shape the original architecture used
-and matching the window the deployed service scores. Clips shorter than the span are extended
-by wrapping the signal rather than zero-padding: generated clips run systematically shorter
-here, so zero padding would differ in quantity by class and the model could separate classes
-on the length of its own padding.
+Two choices avoid shortcuts rather than chase accuracy. Inputs are a fixed five-second span at
+a ten-millisecond hop, the shape the original architecture used and the window the service
+scores. Short clips are extended by wrapping rather than zero-padding, since generated clips run
+systematically shorter and the model could otherwise separate classes on its own padding.
 
 Requirements
-    Kaggle notebook, GPU T4. Roughly 30-40 minutes, well under one GPU-hour.
+    Kaggle notebook, GPU T4, 30-40 minutes.
     Attached inputs: codeswitch-deepfake-feats (index.csv only), -real, -fakes.
-    Download curves_cnn_bilstm.csv, metrics_cnn_bilstm.csv and scores_cnn_bilstm.csv into
-    paper/results/.
 """
 
 # CELL 1: configuration, mounts, and the split definition

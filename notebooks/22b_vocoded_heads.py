@@ -1,30 +1,21 @@
 """Train a head on vocoded fakes and ask whether it generalises to generators it never saw.
 
 A head trained on XTTS-v2 and FreeVC returned an unknown generator's clip as genuine at full
-margin, and both decode through HiFi-GAN, so what it held was one vocoder family. 21's premise is
-that fakes supplied as "audio through a resynthesis bottleneck" teach the property every
-generator shares instead of the fingerprint one of them leaves. Four questions:
+margin, and both decode through HiFi-GAN, so what it held was one vocoder family. 21's premise
+is that fakes supplied as audio through a resynthesis bottleneck teach the property every
+generator shares instead of the fingerprint one of them leaves. Four questions: per-path catch
+rates including the held-out one, whether a vocoded-trained head catches the two generators it
+never saw, how badly the original head misses vocoded fakes, and whether any of it costs false
+rejection of genuine speech.
 
-    per path      does the head catch each vocoder, including the held-out one
-    forward       does a vocoded-trained head catch XTTS-v2 and FreeVC, which it never saw
-    reverse       how badly does the original head miss the vocoded fakes
-    rejection     does any of it cost false rejection of genuine speech, which nothing may regress
-
-Recipe copied from 13 so the numbers stack with every other head here: standardise on the
-training mask, LogisticRegression at 1000 iterations, threshold from the in-domain dev set as the
-midpoint of the gap. Calibrating on target data answers a question no deployment gets to ask.
-
-Three departures, all forced by the data. The vocoded set has no dev split, since 21 drew its
-sources from `split=="train"` only, so one is carved by speaker — a source contributes five rows
-sharing a voice, and a threshold calibrated on speakers already fitted is not a threshold.
-Classes are 4:1, four vocoded versions per twin, so `class_weight` is balanced. And the two
-caches are stacked, which 22 verified is legitimate (scale ratio 0.98), with standardisation
-always from the training mask of the head being fitted, never from the set being scored.
+Recipe copied from 13 so the numbers stack. Three departures forced by the data: the vocoded
+set has no dev split, since 21 drew sources from `split=="train"` only, so one is carved by
+speaker; classes are 4:1 so `class_weight` is balanced; and the two caches are stacked, which
+22 verified is legitimate at a scale ratio of 0.98.
 
 Requirements
-    Kaggle notebook, CPU is enough, no internet, a few minutes.
-    Attached inputs: the output of notebook 22 (voc cache), and codeswitch-deepfake-feats.
-    Writes paper/results/vocoded_heads.csv.
+    Kaggle notebook, CPU, no internet, a few minutes.
+    Attached inputs: the output of notebook 22, and codeswitch-deepfake-feats.
 """
 
 # CELL 1: mounts and the two caches
@@ -129,7 +120,7 @@ ROWS = []
 
 def record(**kw):
     ROWS.append(kw)
-    print("  " + "  ".join(f"{k}={v:.2f}" if isinstance(v, float) else f"{k}={v}"
+    print(" " + " ".join(f"{k}={v:.2f}" if isinstance(v, float) else f"{k}={v}"
                            for k, v in kw.items()))
 
 
@@ -163,7 +154,7 @@ def run_variant(held):
     score, thr = fit_head(XV, YV, train, dev)
     SV = score(XV)
     dev_eer = eer_of(SV[dev], YV[dev])
-    print(f"\n── held out: {held}   {train.sum():,} train, dev EER {dev_eer:.2f}%")
+    print(f"\nheld out: {held}, {train.sum():,} train, dev EER {dev_eer:.2f}%")
 
     for voc in PATHS:
         m = V_TEST & (VI.vocoder == voc).values
@@ -196,7 +187,8 @@ def run_variant(held):
 # The first draw held out lowrank and it was undetectable at EER 52.8%: either unseen attacks are
 # hard, or that path teaches nothing. Holding out each in turn tells them apart, for free.
 SWEEP = {held: run_variant(held) for held in PATHS}
-SV, v_thr = SWEEP[HELD_OUT]  # the shipped choice, carried into the comparison below
+# The shipped choice, carried into the comparison below.
+SV, v_thr = SWEEP[HELD_OUT]
 
 print("\nRead the sweep by column, not by row. A path that is undetectable no matter which "
       "variant is trained is a path that teaches nothing, and should be dropped rather than "
